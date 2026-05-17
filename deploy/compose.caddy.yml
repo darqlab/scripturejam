@@ -1,0 +1,30 @@
+# Caddy overlay — use when you don't have Cloudflare Tunnel.
+# Caddy handles TLS via Let's Encrypt.
+# Set PUBLIC_HOSTNAME in .env (e.g. quiz.example.com).
+# Usage: docker compose -f docker-compose.yml -f compose.caddy.yml up -d
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      PUBLIC_HOSTNAME: ${PUBLIC_HOSTNAME:-localhost}
+    command: >
+      caddy reverse-proxy
+      --from ${PUBLIC_HOSTNAME:-localhost}
+      --to app:3000
+    depends_on:
+      - app
+    networks:
+      - internal
+
+volumes:
+  caddy_data:
+  caddy_config:

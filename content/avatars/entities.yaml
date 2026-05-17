@@ -1,0 +1,583 @@
+# Seed avatar entities — hand-crafted for Phase 1
+# Schema: content/avatars/schema.json
+
+# ── Old Testament persons ─────────────────────────────────────────────────────
+
+- id: adam
+  displayName: Adam
+  category: person
+  testament: OT
+  tags: []
+  blurb: "The first man, formed from dust and placed in the Garden of Eden."
+  aliases: []
+  illustration: null
+
+- id: eve
+  displayName: Eve
+  category: person
+  testament: OT
+  tags: []
+  blurb: "The first woman, formed from Adam's rib in the Garden of Eden."
+  aliases: []
+  illustration: null
+
+- id: noah
+  displayName: Noah
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Built the ark and preserved his family through the great flood."
+  aliases: []
+  illustration: null
+
+- id: abraham
+  displayName: Abraham
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Patriarch called by God to leave Ur and father a great nation."
+  aliases:
+    - Abram
+  illustration: null
+
+- id: sarah
+  displayName: Sarah
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Wife of Abraham; bore Isaac in old age as promised by God."
+  aliases:
+    - Sarai
+  illustration: null
+
+- id: isaac
+  displayName: Isaac
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Son of Abraham and Sarah; father of Jacob and Esau."
+  aliases: []
+  illustration: null
+
+- id: rebekah
+  displayName: Rebekah
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Wife of Isaac; mother of Jacob and Esau."
+  aliases:
+    - Rebecca
+  illustration: null
+
+- id: jacob
+  displayName: Jacob
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Son of Isaac; his twelve sons became the twelve tribes of Israel."
+  aliases:
+    - Israel
+  illustration: null
+
+- id: joseph_son_of_jacob
+  displayName: Joseph
+  disambiguation: "son of Jacob"
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Sold into slavery by his brothers; rose to become ruler in Egypt."
+  aliases: []
+  illustration: null
+
+- id: moses
+  displayName: Moses
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Led Israel out of Egypt and received the Law at Mount Sinai."
+  aliases:
+    - Mosheh
+  illustration: null
+
+- id: aaron
+  displayName: Aaron
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Brother of Moses; first high priest of Israel."
+  aliases: []
+  illustration: null
+
+- id: miriam
+  displayName: Miriam
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Sister of Moses and Aaron; led Israel in song after the Exodus."
+  aliases: []
+  illustration: null
+
+- id: joshua
+  displayName: Joshua
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Moses's successor who led Israel into Canaan."
+  aliases:
+    - Jehoshua
+  illustration: null
+
+- id: deborah
+  displayName: Deborah
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Judge and prophetess who led Israel to victory over Sisera."
+  aliases: []
+  illustration: null
+
+- id: gideon
+  displayName: Gideon
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Judge who defeated the Midianites with three hundred men."
+  aliases:
+    - Jerubbaal
+  illustration: null
+
+- id: samson
+  displayName: Samson
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Judge known for great strength; betrayed by Delilah."
+  aliases: []
+  illustration: null
+
+- id: ruth
+  displayName: Ruth
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Moabite woman who remained loyal to her mother-in-law Naomi."
+  aliases: []
+  illustration: null
+
+- id: naomi
+  displayName: Naomi
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Mother-in-law of Ruth; returned to Bethlehem after losing her sons."
+  aliases: []
+  illustration: null
+
+- id: samuel
+  displayName: Samuel
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Last of the judges; anointed both Saul and David as king."
+  aliases: []
+  illustration: null
+
+- id: saul_king
+  displayName: Saul
+  disambiguation: "King of Israel"
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Israel's first king, chosen by God and anointed by Samuel."
+  aliases: []
+  illustration: null
+
+- id: david
+  displayName: David
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Shepherd boy who became Israel's greatest king; slew Goliath."
+  aliases: []
+  illustration: null
+
+- id: solomon
+  displayName: Solomon
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Son of David; built the Temple in Jerusalem; renowned for wisdom."
+  aliases:
+    - Jedidiah
+  illustration: null
+
+- id: elijah
+  displayName: Elijah
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Prophet who confronted Baal prophets on Mount Carmel."
+  aliases:
+    - Elias
+  illustration: null
+
+- id: elisha
+  displayName: Elisha
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Prophet and successor of Elijah; performed many miracles."
+  aliases: []
+  illustration: null
+
+- id: isaiah
+  displayName: Isaiah
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Prophet who wrote extensively to Judah in the 8th century BC."
+  aliases:
+    - Esaias
+  illustration: null
+
+- id: jeremiah
+  displayName: Jeremiah
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Prophet who warned Jerusalem before the Babylonian conquest."
+  aliases: []
+  illustration: null
+
+- id: daniel
+  displayName: Daniel
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Hebrew captive in Babylon who interpreted dreams and visions."
+  aliases: []
+  illustration: null
+
+- id: esther
+  displayName: Esther
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Jewish queen of Persia who saved her people from destruction."
+  aliases:
+    - Hadassah
+  illustration: null
+
+- id: mordecai
+  displayName: Mordecai
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Cousin of Esther who uncovered a plot against the Jewish people."
+  aliases: []
+  illustration: null
+
+- id: job
+  displayName: Job
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Man who endured great suffering while maintaining his integrity."
+  aliases: []
+  illustration: null
+
+- id: jonah
+  displayName: Jonah
+  category: person
+  testament: OT
+  tags: []
+  blurb: "Prophet swallowed by a great fish; preached to Nineveh."
+  aliases: []
+  illustration: null
+
+# ── New Testament persons ─────────────────────────────────────────────────────
+
+- id: mary_mother_of_jesus
+  displayName: Mary
+  disambiguation: "mother of Jesus"
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Mother of Jesus; received the annunciation from the angel Gabriel."
+  aliases:
+    - Virgin Mary
+  illustration: null
+
+- id: joseph_husband_of_mary
+  displayName: Joseph
+  disambiguation: "husband of Mary"
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Carpenter from Nazareth; husband of Mary and earthly father of Jesus."
+  aliases: []
+  illustration: null
+
+- id: john_the_baptist
+  displayName: John the Baptist
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Prophet who baptised in the Jordan and prepared the way of the Lord."
+  aliases:
+    - John the Baptizer
+  illustration: null
+
+- id: peter
+  displayName: Peter
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Fisherman apostle and early leader of the church in Jerusalem."
+  aliases:
+    - Simon Peter
+    - Cephas
+    - Simon
+  illustration: null
+
+- id: andrew
+  displayName: Andrew
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Brother of Peter; one of the first disciples called by Jesus."
+  aliases: []
+  illustration: null
+
+- id: james_son_of_zebedee
+  displayName: James
+  disambiguation: "son of Zebedee"
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Apostle and brother of John; first apostle to be martyred."
+  aliases:
+    - James the Greater
+  illustration: null
+
+- id: john_apostle
+  displayName: John
+  disambiguation: "apostle, son of Zebedee"
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Apostle and brother of James; wrote the Gospel of John."
+  aliases:
+    - John the Apostle
+    - John the Evangelist
+  illustration: null
+
+- id: matthew
+  displayName: Matthew
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Tax collector who became an apostle and wrote the first Gospel."
+  aliases:
+    - Levi
+  illustration: null
+
+- id: mary_magdalene
+  displayName: Mary Magdalene
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Follower of Jesus; first witness to the resurrection."
+  aliases:
+    - Mary of Magdala
+  illustration: null
+
+- id: martha
+  displayName: Martha
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Sister of Mary and Lazarus; known for her hospitality to Jesus."
+  aliases: []
+  illustration: null
+
+- id: lazarus
+  displayName: Lazarus
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Brother of Martha and Mary; raised from the dead after four days."
+  aliases: []
+  illustration: null
+
+- id: paul
+  displayName: Paul
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Apostle to the Gentiles who wrote much of the New Testament."
+  aliases:
+    - Saul
+    - Saul of Tarsus
+  illustration: null
+
+- id: barnabas
+  displayName: Barnabas
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Companion of Paul on his first missionary journey."
+  aliases:
+    - Joseph
+  illustration: null
+
+- id: lydia
+  displayName: Lydia
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Purple cloth merchant in Philippi; first European convert of Paul."
+  aliases: []
+  illustration: null
+
+- id: priscilla
+  displayName: Priscilla
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Fellow tentmaker and ministry partner of Paul; wife of Aquila."
+  aliases:
+    - Prisca
+  illustration: null
+
+- id: timothy
+  displayName: Timothy
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Young co-worker of Paul; recipient of two New Testament letters."
+  aliases: []
+  illustration: null
+
+- id: silas
+  displayName: Silas
+  category: person
+  testament: NT
+  tags: []
+  blurb: "Companion of Paul on his second missionary journey."
+  aliases:
+    - Silvanus
+  illustration: null
+
+# ── People / group entities ───────────────────────────────────────────────────
+
+- id: israelites
+  displayName: Israelites
+  category: people
+  testament: OT
+  tags: []
+  blurb: "The descendants of Jacob; the covenant people of God."
+  aliases:
+    - Children of Israel
+    - Hebrews
+  illustration: null
+
+- id: philistines
+  displayName: Philistines
+  category: people
+  testament: OT
+  tags: []
+  blurb: "Sea-people who settled Canaan and were frequent foes of Israel."
+  aliases: []
+  illustration: null
+
+- id: pharisees
+  displayName: Pharisees
+  category: people
+  testament: NT
+  tags: []
+  blurb: "Jewish sect known for strict observance of the Law and oral tradition."
+  aliases: []
+  illustration: null
+
+- id: sadducees
+  displayName: Sadducees
+  category: people
+  testament: NT
+  tags: []
+  blurb: "Jewish priestly sect that rejected the resurrection and oral law."
+  aliases: []
+  illustration: null
+
+- id: disciples_twelve
+  displayName: The Twelve Disciples
+  category: people
+  testament: NT
+  tags: []
+  blurb: "The twelve apostles chosen by Jesus to accompany and follow him."
+  aliases:
+    - The Twelve Apostles
+    - The Twelve
+  illustration: null
+
+- id: levites
+  displayName: Levites
+  category: people
+  testament: both
+  tags: []
+  blurb: "Tribe of Levi set apart for service in the tabernacle and temple."
+  aliases: []
+  illustration: null
+
+# ── Animal / object / symbolic entities ──────────────────────────────────────
+
+- id: serpent_garden
+  displayName: Serpent
+  disambiguation: "Garden of Eden"
+  category: animal
+  testament: OT
+  tags:
+    - adversarial
+  blurb: "The creature who tempted Eve in the Garden of Eden."
+  aliases: []
+  illustration: null
+
+- id: burning_bush
+  displayName: Burning Bush
+  category: object
+  testament: OT
+  tags: []
+  blurb: "The bush that burned but was not consumed; God spoke to Moses from it."
+  aliases: []
+  illustration: null
+
+- id: ark_of_the_covenant
+  displayName: Ark of the Covenant
+  category: object
+  testament: OT
+  tags: []
+  blurb: "The gold-covered chest containing the tablets of the Law."
+  aliases:
+    - Ark of God
+    - Ark of the Testimony
+  illustration: null
+
+- id: dove_noahs
+  displayName: Dove
+  disambiguation: "Noah's dove"
+  category: animal
+  testament: OT
+  tags: []
+  blurb: "The dove Noah released that returned with an olive leaf."
+  aliases: []
+  illustration: null
+
+- id: bronze_serpent
+  displayName: Bronze Serpent
+  category: object
+  testament: OT
+  tags: []
+  blurb: "The bronze image made by Moses; those who looked at it were healed."
+  aliases:
+    - Nehushtan
+  illustration: null

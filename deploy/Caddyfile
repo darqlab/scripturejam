@@ -1,0 +1,14 @@
+# Replace quiz.example.org with your actual domain.
+# Caddy will automatically obtain and renew a Let's Encrypt certificate.
+
+quiz.example.org {
+    reverse_proxy app:3000
+
+    # WebSocket upgrade headers (Caddy handles this automatically, but explicit for clarity)
+    header_up Host {host}
+
+    log {
+        output stdout
+        format json
+    }
+}

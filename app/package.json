@@ -1,0 +1,17 @@
+{
+  "name": "scripturejam-workspace",
+  "private": true,
+  "scripts": {
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "format": "prettier --write \"**/*.{ts,svelte,json,md}\" --ignore-path ../.gitignore"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "prettier-plugin-svelte": "^3.2.6"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}

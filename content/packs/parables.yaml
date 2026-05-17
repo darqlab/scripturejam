@@ -1,0 +1,343 @@
+pack:
+  id: parables
+  title: Parables of Jesus
+  description: "Questions on the parables told by Jesus in the Gospels."
+  ageBand: all-ages
+  questionIds:
+    - par-001
+    - par-002
+    - par-003
+    - par-004
+    - par-005
+    - par-006
+    - par-007
+    - par-008
+    - par-009
+    - par-010
+    - par-011
+    - par-012
+    - par-013
+    - par-014
+    - par-015
+
+questions:
+  # ── Easy (5) ─────────────────────────────────────────────────────────────────
+
+  - id: par-001
+    prompt: "In the parable of the Prodigal Son, what did the father do when he saw his son returning from afar?"
+    options:
+      - id: a
+        text: He sent a servant to meet him
+      - id: b
+        text: He ran and fell on his neck and kissed him
+      - id: c
+        text: He sent the elder son to bring him in
+      - id: d
+        text: He waited at the door of the house
+    correctOptionId: b
+    references:
+      - book: Luke
+        chapter: 15
+        verse_start: 20
+    difficulty: easy
+    themes:
+      - parable
+      - grace
+
+  - id: par-002
+    prompt: "In the parable of the Good Samaritan, what did the Samaritan put on the wounded man's wounds?"
+    options:
+      - id: a
+        text: Water and salt
+      - id: b
+        text: Honey and cloth
+      - id: c
+        text: Oil and wine
+      - id: d
+        text: Milk and bandages
+    correctOptionId: c
+    references:
+      - book: Luke
+        chapter: 10
+        verse_start: 34
+    difficulty: easy
+    themes:
+      - parable
+      - mercy
+
+  - id: par-003
+    prompt: "In the parable of the Sower, what happened to the seed that fell by the wayside?"
+    options:
+      - id: a
+        text: It withered because it had no moisture
+      - id: b
+        text: The thorns choked it
+      - id: c
+        text: The fowls devoured it
+      - id: d
+        text: It sprang up and bore fruit
+    correctOptionId: c
+    references:
+      - book: Matthew
+        chapter: 13
+        verse_start: 4
+    difficulty: easy
+    themes:
+      - parable
+      - teaching
+
+  - id: par-004
+    prompt: "In the parable of the Lost Sheep, how many sheep did the man have when one went missing?"
+    options:
+      - id: a
+        text: Fifty
+      - id: b
+        text: One hundred
+      - id: c
+        text: Ten
+      - id: d
+        text: Seventy
+    correctOptionId: b
+    references:
+      - book: Luke
+        chapter: 15
+        verse_start: 4
+    difficulty: easy
+    themes:
+      - parable
+      - grace
+
+  - id: par-005
+    prompt: "In the parable of the Ten Virgins, how many of them were wise and how many were foolish?"
+    options:
+      - id: a
+        text: Seven wise and three foolish
+      - id: b
+        text: Six wise and four foolish
+      - id: c
+        text: Five wise and five foolish
+      - id: d
+        text: Eight wise and two foolish
+    correctOptionId: c
+    references:
+      - book: Matthew
+        chapter: 25
+        verse_start: 2
+    difficulty: easy
+    themes:
+      - parable
+      - readiness
+
+  # ── Medium (7) ───────────────────────────────────────────────────────────────
+
+  - id: par-006
+    prompt: "In the parable of the Talents, what did the servant who received one talent do with it?"
+    options:
+      - id: a
+        text: He traded it and gained one more
+      - id: b
+        text: He gave it to a money-changer
+      - id: c
+        text: He hid it in the earth
+      - id: d
+        text: He spent it on his household
+    correctOptionId: c
+    references:
+      - book: Matthew
+        chapter: 25
+        verse_start: 18
+    difficulty: medium
+    themes:
+      - parable
+      - stewardship
+
+  - id: par-007
+    prompt: "In the parable of the Mustard Seed, Jesus said the kingdom of heaven is like a grain of mustard seed which, when grown, becomes a tree where what happens?"
+    options:
+      - id: a
+        text: Children come to play in its shade
+      - id: b
+        text: The birds of the air come and lodge in its branches
+      - id: c
+        text: Men gather its fruit for the harvest
+      - id: d
+        text: The wind blows its seeds across the field
+    correctOptionId: b
+    references:
+      - book: Matthew
+        chapter: 13
+        verse_start: 32
+    difficulty: medium
+    themes:
+      - parable
+      - kingdom
+
+  - id: par-008
+    prompt: "In the parable of the Prodigal Son, what did the elder brother say he had never received despite his years of service?"
+    options:
+      - id: a
+        text: A robe and ring
+      - id: b
+        text: A young ox for a feast with his friends
+      - id: c
+        text: A kid of goats
+      - id: d
+        text: A portion of the inheritance
+    correctOptionId: c
+    references:
+      - book: Luke
+        chapter: 15
+        verse_start: 29
+    difficulty: medium
+    themes:
+      - parable
+      - narrative
+
+  - id: par-009
+    prompt: "In the parable of the Workers in the Vineyard, what wage was agreed upon with the workers hired at the beginning of the day?"
+    options:
+      - id: a
+        text: Two pence
+      - id: b
+        text: A penny
+      - id: c
+        text: Half a shekel
+      - id: d
+        text: A talent
+    correctOptionId: b
+    references:
+      - book: Matthew
+        chapter: 20
+        verse_start: 2
+    difficulty: medium
+    themes:
+      - parable
+      - grace
+
+  - id: par-010
+    prompt: "In the parable of the Unforgiving Servant, how much did the king forgive the servant who owed him?"
+    options:
+      - id: a
+        text: Ten thousand talents
+      - id: b
+        text: One hundred pence
+      - id: c
+        text: Five thousand shekels
+      - id: d
+        text: Three thousand denarii
+    correctOptionId: a
+    references:
+      - book: Matthew
+        chapter: 18
+        verse_start: 24
+    difficulty: medium
+    themes:
+      - parable
+      - forgiveness
+
+  - id: par-011
+    prompt: "In the parable of the Rich Man and Lazarus, to whose bosom was Lazarus carried after his death?"
+    options:
+      - id: a
+        text: Moses's bosom
+      - id: b
+        text: Abraham's bosom
+      - id: c
+        text: Isaac's bosom
+      - id: d
+        text: The bosom of the prophets
+    correctOptionId: b
+    references:
+      - book: Luke
+        chapter: 16
+        verse_start: 22
+    difficulty: medium
+    themes:
+      - parable
+      - afterlife
+
+  - id: par-012
+    prompt: "In the parable of the Sower, what caused the seed that fell among thorns to be choked, according to Jesus's explanation?"
+    options:
+      - id: a
+        text: Persecution and tribulation
+      - id: b
+        text: The deceitfulness of riches and cares of this world
+      - id: c
+        text: The lack of root in themselves
+      - id: d
+        text: The evil one snatching the word away
+    correctOptionId: b
+    references:
+      - book: Matthew
+        chapter: 13
+        verse_start: 22
+    difficulty: medium
+    themes:
+      - parable
+      - teaching
+
+  # ── Hard (3) ─────────────────────────────────────────────────────────────────
+
+  - id: par-013
+    prompt: "In the parable of the Pharisee and the Publican, what did the Publican say as he stood afar off?"
+    options:
+      - id: a
+        text: "Lord, I thank thee for thy mercy toward me"
+      - id: b
+        text: "God be merciful to me a sinner"
+      - id: c
+        text: "Create in me a clean heart, O God"
+      - id: d
+        text: "Forgive me, for I have done evil in thy sight"
+    correctOptionId: b
+    references:
+      - book: Luke
+        chapter: 18
+        verse_start: 13
+    difficulty: hard
+    themes:
+      - parable
+      - prayer
+
+  - id: par-014
+    prompt: "In the parable of the Two Sons (Matthew 21), a man asked his two sons to go work in his vineyard. What did the first son say, and what did he do?"
+    options:
+      - id: a
+        text: He said he would go, and he went
+      - id: b
+        text: He said he would not go, but afterward repented and went
+      - id: c
+        text: He said he would go, but went not
+      - id: d
+        text: He said he would not go, and he went not
+    correctOptionId: b
+    references:
+      - book: Matthew
+        chapter: 21
+        verse_start: 29
+    difficulty: hard
+    themes:
+      - parable
+      - repentance
+
+  - id: par-015
+    prompt: "In the parable of the Unjust Steward, his master commended him because he had done what?"
+    options:
+      - id: a
+        text: Repaid all that he owed
+      - id: b
+        text: Dealt wisely
+      - id: c
+        text: Given to the poor
+      - id: d
+        text: Confessed his wrongdoing openly
+    correctOptionId: b
+    references:
+      - book: Luke
+        chapter: 16
+        verse_start: 8
+    difficulty: hard
+    themes:
+      - parable
+      - stewardship

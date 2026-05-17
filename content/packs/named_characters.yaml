@@ -1,0 +1,458 @@
+pack:
+  id: named_characters
+  title: Named Characters
+  description: "Who did what in the Bible? Identify the person behind the act."
+  ageBand: all-ages
+  questionIds:
+    - nc-001
+    - nc-002
+    - nc-003
+    - nc-004
+    - nc-005
+    - nc-006
+    - nc-007
+    - nc-008
+    - nc-009
+    - nc-010
+    - nc-011
+    - nc-012
+    - nc-013
+    - nc-014
+    - nc-015
+    - nc-016
+    - nc-017
+    - nc-018
+    - nc-019
+    - nc-020
+
+questions:
+  # ── Easy (7) ────────────────────────────────────────────────────────────────
+
+  - id: nc-001
+    prompt: "Who was swallowed by a great fish?"
+    options:
+      - id: a
+        text: Jonah
+      - id: b
+        text: Elijah
+      - id: c
+        text: Ezekiel
+      - id: d
+        text: Amos
+    correctOptionId: a
+    references:
+      - book: Jonah
+        chapter: 1
+        verse_start: 17
+    difficulty: easy
+    themes:
+      - narrative
+      - prophets
+
+  - id: nc-002
+    prompt: "Who received the Ten Commandments on Mount Sinai?"
+    options:
+      - id: a
+        text: Aaron
+      - id: b
+        text: Joshua
+      - id: c
+        text: Moses
+      - id: d
+        text: Elijah
+    correctOptionId: c
+    references:
+      - book: Exodus
+        chapter: 20
+        verse_start: 1
+        verse_end: 3
+    difficulty: easy
+    themes:
+      - law
+      - narrative
+
+  - id: nc-003
+    prompt: "Who was thrown into a den of lions?"
+    options:
+      - id: a
+        text: Shadrach
+      - id: b
+        text: Daniel
+      - id: c
+        text: Ezekiel
+      - id: d
+        text: Jeremiah
+    correctOptionId: b
+    references:
+      - book: Daniel
+        chapter: 6
+        verse_start: 16
+    difficulty: easy
+    themes:
+      - narrative
+      - faithfulness
+
+  - id: nc-004
+    prompt: "Who betrayed Jesus for thirty pieces of silver?"
+    options:
+      - id: a
+        text: Peter
+      - id: b
+        text: Thomas
+      - id: c
+        text: James
+      - id: d
+        text: Judas
+    correctOptionId: d
+    references:
+      - book: Matthew
+        chapter: 26
+        verse_start: 15
+    difficulty: easy
+    themes:
+      - narrative
+      - betrayal
+
+  - id: nc-005
+    prompt: "What was the name of Moses's brother?"
+    options:
+      - id: a
+        text: Aaron
+      - id: b
+        text: Joshua
+      - id: c
+        text: Caleb
+      - id: d
+        text: Hur
+    correctOptionId: a
+    references:
+      - book: Exodus
+        chapter: 4
+        verse_start: 14
+    difficulty: easy
+    themes:
+      - narrative
+      - family
+
+  - id: nc-006
+    prompt: "Who killed Goliath with a sling and a stone?"
+    options:
+      - id: a
+        text: Saul
+      - id: b
+        text: Jonathan
+      - id: c
+        text: David
+      - id: d
+        text: Samson
+    correctOptionId: c
+    references:
+      - book: 1 Samuel
+        chapter: 17
+        verse_start: 50
+    difficulty: easy
+    themes:
+      - narrative
+      - battle
+
+  - id: nc-007
+    prompt: "Who built the ark at God's command?"
+    options:
+      - id: a
+        text: Abraham
+      - id: b
+        text: Noah
+      - id: c
+        text: Enoch
+      - id: d
+        text: Methuselah
+    correctOptionId: b
+    references:
+      - book: Genesis
+        chapter: 6
+        verse_start: 14
+    difficulty: easy
+    themes:
+      - narrative
+      - flood
+
+  # ── Medium (9) ───────────────────────────────────────────────────────────────
+
+  - id: nc-008
+    prompt: "Who interpreted Pharaoh's dreams about seven cows and seven ears of grain?"
+    options:
+      - id: a
+        text: Moses
+      - id: b
+        text: Joseph
+      - id: c
+        text: Daniel
+      - id: d
+        text: Elisha
+    correctOptionId: b
+    references:
+      - book: Genesis
+        chapter: 41
+        verse_start: 25
+    difficulty: medium
+    themes:
+      - narrative
+      - prophecy
+
+  - id: nc-009
+    prompt: "Who was the first high priest of Israel, consecrated by Moses?"
+    options:
+      - id: a
+        text: Eleazar
+      - id: b
+        text: Phinehas
+      - id: c
+        text: Aaron
+      - id: d
+        text: Zadok
+    correctOptionId: c
+    references:
+      - book: Exodus
+        chapter: 28
+        verse_start: 1
+    difficulty: medium
+    themes:
+      - priesthood
+      - narrative
+
+  - id: nc-010
+    prompt: "Which judge of Israel made a vow concerning his daughter before a battle?"
+    options:
+      - id: a
+        text: Gideon
+      - id: b
+        text: Samson
+      - id: c
+        text: Jephthah
+      - id: d
+        text: Othniel
+    correctOptionId: c
+    references:
+      - book: Judges
+        chapter: 11
+        verse_start: 30
+        verse_end: 31
+    difficulty: medium
+    themes:
+      - narrative
+      - vow
+
+  - id: nc-011
+    prompt: "Who was the Moabite woman who said, 'Whither thou goest, I will go'?"
+    options:
+      - id: a
+        text: Rahab
+      - id: b
+        text: Orpah
+      - id: c
+        text: Tamar
+      - id: d
+        text: Ruth
+    correctOptionId: d
+    references:
+      - book: Ruth
+        chapter: 1
+        verse_start: 16
+    difficulty: medium
+    themes:
+      - loyalty
+      - narrative
+
+  - id: nc-012
+    prompt: "Who was the prophetess and judge who sat under a palm tree in Israel?"
+    options:
+      - id: a
+        text: Miriam
+      - id: b
+        text: Deborah
+      - id: c
+        text: Huldah
+      - id: d
+        text: Anna
+    correctOptionId: b
+    references:
+      - book: Judges
+        chapter: 4
+        verse_start: 4
+        verse_end: 5
+    difficulty: medium
+    themes:
+      - judges
+      - prophecy
+
+  - id: nc-013
+    prompt: "Who anointed Saul as the first king of Israel?"
+    options:
+      - id: a
+        text: Nathan
+      - id: b
+        text: Eli
+      - id: c
+        text: Samuel
+      - id: d
+        text: Gad
+    correctOptionId: c
+    references:
+      - book: 1 Samuel
+        chapter: 10
+        verse_start: 1
+    difficulty: medium
+    themes:
+      - narrative
+      - kingship
+
+  - id: nc-014
+    prompt: "Which apostle was a tax collector before following Jesus?"
+    options:
+      - id: a
+        text: Peter
+      - id: b
+        text: Andrew
+      - id: c
+        text: Matthew
+      - id: d
+        text: Bartholomew
+    correctOptionId: c
+    references:
+      - book: Matthew
+        chapter: 9
+        verse_start: 9
+    difficulty: medium
+    themes:
+      - narrative
+      - calling
+
+  - id: nc-015
+    prompt: "Who was the queen who came from a far country to hear the wisdom of Solomon?"
+    options:
+      - id: a
+        text: Queen of Sheba
+      - id: b
+        text: Queen of Egypt
+      - id: c
+        text: Jezebel
+      - id: d
+        text: Vashti
+    correctOptionId: a
+    references:
+      - book: 1 Kings
+        chapter: 10
+        verse_start: 1
+    difficulty: medium
+    themes:
+      - narrative
+      - wisdom
+
+  - id: nc-016
+    prompt: "Who was the woman of Jericho who hid the two spies sent by Joshua?"
+    options:
+      - id: a
+        text: Deborah
+      - id: b
+        text: Abigail
+      - id: c
+        text: Rahab
+      - id: d
+        text: Tamar
+    correctOptionId: c
+    references:
+      - book: Joshua
+        chapter: 2
+        verse_start: 1
+        verse_end: 4
+    difficulty: medium
+    themes:
+      - narrative
+      - faithfulness
+
+  # ── Hard (4) ─────────────────────────────────────────────────────────────────
+
+  - id: nc-017
+    prompt: "Which king of Israel built altars for Baal and made Israel to sin more than all the kings before him?"
+    options:
+      - id: a
+        text: Ahab
+      - id: b
+        text: Jeroboam
+      - id: c
+        text: Omri
+      - id: d
+        text: Manasseh
+    correctOptionId: a
+    references:
+      - book: 1 Kings
+        chapter: 16
+        verse_start: 33
+    difficulty: hard
+    themes:
+      - kingship
+      - idolatry
+
+  - id: nc-018
+    prompt: "Who was the Syrian commander healed of leprosy after dipping seven times in the Jordan?"
+    options:
+      - id: a
+        text: Hazael
+      - id: b
+        text: Benhadad
+      - id: c
+        text: Naaman
+      - id: d
+        text: Gehazi
+    correctOptionId: c
+    references:
+      - book: 2 Kings
+        chapter: 5
+        verse_start: 14
+    difficulty: hard
+    themes:
+      - miracle
+      - narrative
+
+  - id: nc-019
+    prompt: "Who was the scribe who read the book of the law to the people while Nehemiah stood beside him?"
+    options:
+      - id: a
+        text: Ezra
+      - id: b
+        text: Malachi
+      - id: c
+        text: Zechariah
+      - id: d
+        text: Shemaiah
+    correctOptionId: a
+    references:
+      - book: Nehemiah
+        chapter: 8
+        verse_start: 1
+        verse_end: 5
+    difficulty: hard
+    themes:
+      - narrative
+      - law
+
+  - id: nc-020
+    prompt: "Which woman sold purple cloth in Philippi and was the first convert of Paul in Europe?"
+    options:
+      - id: a
+        text: Priscilla
+      - id: b
+        text: Phoebe
+      - id: c
+        text: Eunice
+      - id: d
+        text: Lydia
+    correctOptionId: d
+    references:
+      - book: Acts
+        chapter: 16
+        verse_start: 14
+    difficulty: hard
+    themes:
+      - narrative
+      - missions

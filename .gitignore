@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.svelte-kit/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.uv/
+
+# Env
+.env
+.env.local
+
+# Docker
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Content pipeline staging (generated, not reviewed)
+content-tools/staging/
+
+# Bible text files are large — added by pipeline, not committed as raw text
+# (only the indexed YAML form is committed)
+content/bible/raw/

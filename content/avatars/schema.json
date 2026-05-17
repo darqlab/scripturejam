@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "avatar-entity",
+  "title": "AvatarEntity",
+  "type": "object",
+  "required": ["id", "displayName", "category", "testament", "tags", "blurb", "aliases"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "displayName": { "type": "string", "maxLength": 80 },
+    "disambiguation": { "type": "string", "maxLength": 60 },
+    "category": { "type": "string", "enum": ["person", "people", "animal", "object"] },
+    "testament": { "type": ["string", "null"], "enum": ["OT", "NT", "both", null] },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["adversarial", "genealogy"] }
+    },
+    "blurb": { "type": "string", "maxLength": 80 },
+    "aliases": { "type": "array", "items": { "type": "string" } },
+    "illustration": { "type": ["string", "null"] }
+  }
+}

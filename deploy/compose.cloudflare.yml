@@ -1,0 +1,19 @@
+# Cloudflare Tunnel overlay.
+# Requires TUNNEL_TOKEN in .env (or environment).
+# Usage: docker compose -f docker-compose.yml -f compose.cloudflare.yml up -d
+#
+# NPM (Nginx Proxy Manager) is assumed to be running on the same host on a
+# shared Docker network. Configure an NPM proxy host pointing at app:3000
+# on the `scripturejam_internal` network.
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    depends_on:
+      - app
+    networks:
+      - internal

@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/* scripturejam design tokens */
+:root {
+  /* Option shape colors — color-blind-safe, always paired with shape icons */
+  --color-option-a: #3b82f6; /* blue  — triangle ▲ */
+  --color-option-b: #ef4444; /* red   — circle  ● */
+  --color-option-c: #f59e0b; /* amber — square  ■ */
+  --color-option-d: #10b981; /* green — diamond ◆ */
+}
+
+/* High-contrast theme (toggled via .high-contrast on <body>) */
+.high-contrast {
+  --color-option-a: #0000ff;
+  --color-option-b: #ff0000;
+  --color-option-c: #ff8800;
+  --color-option-d: #008000;
+}

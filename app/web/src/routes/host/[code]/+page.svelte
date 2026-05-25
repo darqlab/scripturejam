@@ -165,8 +165,14 @@
         body: JSON.stringify({ hostToken, scope, translation, mode }),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        startError = (body as { message?: string }).message ?? "Failed to start quiz";
+        const body = await res.json().catch(() => ({})) as { error?: string; message?: string; matched?: number; min?: number };
+        if (body.error === "scope_too_small") {
+          startError = `Not enough questions — found ${body.matched}, need at least ${body.min}. Try a broader selection.`;
+        } else if (body.error === "content_not_available") {
+          startError = "Question content unavailable — please try again";
+        } else {
+          startError = body.message ?? body.error ?? "Failed to start quiz";
+        }
         starting = false;
       }
     } catch {

@@ -13,6 +13,35 @@ scripturejam is a self-hosted Kahoot-style Bible quiz app for live church events
 
 ## Install
 
+### Raspberry Pi (one-line installer)
+
+Installs Docker, clones the repo, generates secrets, and starts the stack — all in one command.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/darqlab/scripturejam/main/scripts/install.sh | sudo bash
+```
+
+The installer will offer to download the Bible texts during setup. Once complete, open the host console in a browser on the same network:
+
+```
+http://<pi-ip>:4000/host
+```
+
+Players join at `http://<pi-ip>:4000/j/<code>` or by scanning the QR code shown on the host screen.
+
+**Manage the stack:**
+
+```bash
+/opt/yard/scripturejam/scripts/up.sh       # start
+/opt/yard/scripturejam/scripts/down.sh     # stop
+/opt/yard/scripturejam/scripts/deploy.sh   # rebuild + restart
+/opt/yard/scripturejam/scripts/backup.sh   # pg_dump → backups/
+```
+
+> Re-running the installer on an existing installation pulls the latest code and skips secret generation. Your data and `.env` are preserved.
+
+---
+
 ### Cloudflare Tunnel (no inbound ports required)
 
 ```bash

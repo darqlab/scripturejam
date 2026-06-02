@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deployment — ScriptureJam</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --accent: #6c63ff;
+      --text: #e8e9f0;
+      --muted: #8b8fa8;
+      --code-bg: #12141d;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    nav {
+      border-bottom: 1px solid var(--border);
+      padding: 16px 0;
+    }
+    nav .container {
+      max-width: 860px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    nav .logo { font-weight: 700; font-size: 1.05rem; color: var(--text); }
+    nav .nav-links { display: flex; gap: 24px; }
+    nav .nav-links a { color: var(--muted); font-size: 0.9rem; }
+    nav .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+    .content {
+      max-width: 720px;
+      margin: 56px auto;
+      padding: 0 24px;
+    }
+    h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 32px; }
+    h2 {
+      font-size: 1.25rem; font-weight: 700; margin-top: 48px; margin-bottom: 12px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 1rem; font-weight: 600; margin-top: 24px; margin-bottom: 8px; }
+    p { color: var(--muted); margin-bottom: 14px; font-size: 0.95rem; }
+    ul, ol { color: var(--muted); font-size: 0.95rem; padding-left: 20px; margin-bottom: 14px; }
+    li { margin-bottom: 6px; }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.83rem;
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+    code { font-family: inherit; color: var(--text); }
+    p code, li code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.85em;
+      color: var(--text);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    th { background: var(--surface); color: var(--text); font-weight: 600; }
+    td { color: var(--muted); }
+    .back { display: inline-block; color: var(--muted); font-size: 0.88rem; margin-bottom: 32px; }
+    .back:hover { color: var(--text); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <a class="logo" href="index.html">ScriptureJam</a>
+      <div class="nav-links">
+        <a href="index.html#install">Install</a>
+        <a href="index.html#deploy">Deploy</a>
+        <a href="deployment.html">Docs</a>
+        <a href="https://github.com/darqlab/scripturejam">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="content">
+    <a class="back" href="index.html">&larr; Back to home</a>
+    <h1>Deployment</h1>
+
+    <h2>Prerequisites</h2>
+    <ul>
+      <li>Docker 24+ and Docker Compose v2</li>
+      <li>A <code>.env</code> file (copy from <code>.env.example</code> and fill in required vars)</li>
+    </ul>
+
+    <h2 id="cloudflare">Option A — Cloudflare Tunnel (recommended)</h2>
+    <p>No inbound ports needed on the VM. Requires a Cloudflare account and a Tunnel token.</p>
+    <pre><code>cp .env.example .env
+# Edit .env: set IP_HASH_SECRET and TUNNEL_TOKEN
+docker compose -f deploy/docker-compose.yml -f deploy/compose.cloudflare.yml up -d</code></pre>
+    <p>In Cloudflare Zero Trust → Tunnels → your tunnel, add a public hostname:</p>
+    <ul>
+      <li>Public hostname: <code>quiz.yourdomain.com</code></li>
+      <li>Service: <code>http://app:3000</code> (internal docker network)</li>
+    </ul>
+
+    <h2 id="caddy">Option B — Caddy with Let's Encrypt</h2>
+    <p>Requires a static IP / port-forward and a domain pointed at the host.</p>
+    <pre><code>cp .env.example .env
+# Edit .env: set IP_HASH_SECRET
+# Edit deploy/Caddyfile: replace quiz.example.org with your domain
+docker compose -f deploy/docker-compose.yml -f deploy/compose.caddy.yml up -d</code></pre>
+
+    <h2>Upgrade</h2>
+    <pre><code>docker compose pull
+docker compose up -d</code></pre>
+    <p>Postgres migrations run automatically on app start. In-flight sessions survive restarts under ~5 s (Redis state preserved; Socket.IO clients reconnect).</p>
+
+    <h2>Environment variable reference</h2>
+    <p>See <code>.env.example</code> — every variable is documented inline. Key variables:</p>
+    <table>
+      <tr><th>Variable</th><th>Purpose</th></tr>
+      <tr><td><code>IP_HASH_SECRET</code></td><td>HMAC secret for audit-log IP hashing (required)</td></tr>
+      <tr><td><code>DATABASE_URL</code></td><td>PostgreSQL connection string</td></tr>
+      <tr><td><code>REDIS_URL</code></td><td>Redis connection string</td></tr>
+      <tr><td><code>PUBLIC_URL</code></td><td>Public base URL (e.g. <code>https://quiz.example.com</code>)</td></tr>
+      <tr><td><code>PUBLIC_HOSTNAME</code></td><td>Domain for Caddy TLS (Caddy path only)</td></tr>
+      <tr><td><code>TUNNEL_TOKEN</code></td><td>Cloudflare Tunnel token (Cloudflare path only)</td></tr>
+      <tr><td><code>POSTGRES_USER/PASSWORD/DB</code></td><td>Postgres credentials for Docker Compose</td></tr>
+    </table>
+
+    <h2>Backup</h2>
+    <pre><code># Postgres
+docker compose exec postgres pg_dump -U $POSTGRES_USER $POSTGRES_DB &gt; backup.sql
+
+# Restore
+docker compose exec -T postgres psql -U $POSTGRES_USER $POSTGRES_DB &lt; backup.sql</code></pre>
+    <p>Redis holds only ephemeral session state with TTLs — no backup needed.</p>
+
+    <h2>Logs</h2>
+    <pre><code>docker compose logs -f app</code></pre>
+    <p>The app emits one JSON line per request and one per significant WebSocket event.</p>
+  </div>
+
+</body>
+</html>

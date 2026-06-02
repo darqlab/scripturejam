@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security — ScriptureJam</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --accent: #6c63ff;
+      --text: #e8e9f0;
+      --muted: #8b8fa8;
+      --code-bg: #12141d;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    nav {
+      border-bottom: 1px solid var(--border);
+      padding: 16px 0;
+    }
+    nav .container {
+      max-width: 860px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    nav .logo { font-weight: 700; font-size: 1.05rem; color: var(--text); }
+    nav .nav-links { display: flex; gap: 24px; }
+    nav .nav-links a { color: var(--muted); font-size: 0.9rem; }
+    nav .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+    .content {
+      max-width: 720px;
+      margin: 56px auto;
+      padding: 0 24px;
+    }
+    h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 32px; }
+    h2 {
+      font-size: 1.25rem; font-weight: 700; margin-top: 48px; margin-bottom: 12px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+    p { color: var(--muted); margin-bottom: 14px; font-size: 0.95rem; }
+    ul { color: var(--muted); font-size: 0.95rem; padding-left: 20px; margin-bottom: 14px; }
+    li { margin-bottom: 6px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    th { background: var(--surface); color: var(--text); font-weight: 600; }
+    td { color: var(--muted); }
+    p code, li code, td code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.85em;
+      color: var(--text);
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+    .back { display: inline-block; color: var(--muted); font-size: 0.88rem; margin-bottom: 32px; }
+    .back:hover { color: var(--text); text-decoration: none; }
+    .note {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <a class="logo" href="index.html">ScriptureJam</a>
+      <div class="nav-links">
+        <a href="index.html#install">Install</a>
+        <a href="index.html#deploy">Deploy</a>
+        <a href="deployment.html">Docs</a>
+        <a href="https://github.com/darqlab/scripturejam">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="content">
+    <a class="back" href="index.html">&larr; Back to home</a>
+    <h1>Security</h1>
+
+    <div class="note">Full threat model is planned for a future release (Phase 5). This page summarises the controls in place today.</div>
+
+    <h2>Attack surface summary</h2>
+    <table>
+      <tr><th>Surface</th><th>Control</th></tr>
+      <tr><td>Session creation abuse</td><td>Rate limit: 5/IP/hour + 100/global/hour</td></tr>
+      <tr><td>Session code guessing</td><td>6-char code from 32-char unambiguous alphabet (~10⁹ space); empty sessions expire in 15 min</td></tr>
+      <tr><td>IP audit logging</td><td>IPs are HMAC-hashed before storage; raw IP never persisted</td></tr>
+      <tr><td>PII</td><td>Nicknames only — no email, no account, no device fingerprinting</td></tr>
+      <tr><td>TLS</td><td>Terminated at Cloudflare edge (reference deploy) or Caddy / Let's Encrypt (alternative)</td></tr>
+      <tr><td>Inbound ports</td><td>Reference deployment has no inbound ports open on the VM (Cloudflare Tunnel)</td></tr>
+      <tr><td>XSS</td><td>SvelteKit escapes template output by default; CSP header on all pages</td></tr>
+      <tr><td>Input validation</td><td>All user inputs validated server-side before any state mutation</td></tr>
+      <tr><td>Host token</td><td>Issued at session creation, stored client-side, required to reconnect as host</td></tr>
+    </table>
+
+    <h2>Known gaps (v1)</h2>
+    <ul>
+      <li>No screen-reader / WCAG AA compliance</li>
+      <li>No full third-party security audit before launch gate</li>
+      <li>Formal threat model document not yet published</li>
+    </ul>
+
+    <h2>Reporting a vulnerability</h2>
+    <p>
+      Please open a <a href="https://github.com/darqlab/scripturejam/issues">GitHub issue</a> marked
+      <strong>Security</strong> or contact the maintainer directly via the repository profile.
+    </p>
+  </div>
+
+</body>
+</html>

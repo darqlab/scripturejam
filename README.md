@@ -85,7 +85,7 @@ Verse text is shown on every answer reveal — the core teaching moment. The thr
 bash content-tools/scripts/install-bible-texts.sh
 ```
 
-The script downloads KJV, WEB, and ASV from [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases) (public domain), indexes them into `content/bible/*.yaml` (~17 MB total), and prints next steps.
+The script downloads KJV, ASV, and BSB (used as the WEB slot) from [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases) (public domain), indexes them into `content/bible/*.yaml` (~13 MB total), and prints next steps.
 
 After running, rebuild the image to bake the texts in:
 

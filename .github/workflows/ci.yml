@@ -86,7 +86,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Link content directory
-        run: ln -s ${{ github.workspace }}/content app/server/content
+        run: ln -s ${{ github.workspace }}/content server/content
 
       - name: Integration tests
         run: pnpm --filter @scripturejam/server test:integration

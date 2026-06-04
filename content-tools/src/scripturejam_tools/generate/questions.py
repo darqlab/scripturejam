@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
-from typing import Optional
 
 import anthropic
 import typer
@@ -56,7 +54,10 @@ def _fill_template(template: str, variables: dict) -> str:
 
 
 def _estimate_cost(input_tokens: int, output_tokens: int) -> float:
-    return (input_tokens / 1_000_000) * INPUT_COST_PER_M + (output_tokens / 1_000_000) * OUTPUT_COST_PER_M
+    return (
+        (input_tokens / 1_000_000) * INPUT_COST_PER_M
+        + (output_tokens / 1_000_000) * OUTPUT_COST_PER_M
+    )
 
 
 def _load_staging(staging_path: Path) -> list:

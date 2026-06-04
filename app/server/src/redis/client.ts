@@ -1,4 +1,4 @@
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 
@@ -8,7 +8,7 @@ export const redis = new Redis(config.REDIS_URL, {
   enableReadyCheck: true,
 });
 
-redis.on("error", (err) => {
+redis.on("error", (err: Error) => {
   logger.error("Redis error", { error: err.message });
 });
 

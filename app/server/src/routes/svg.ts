@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import QRCode = require("qrcode-svg");
+import QRCode from "qrcode-svg";
 import { config } from "../config.js";
 import { getContent } from "../content/loader.js";
 

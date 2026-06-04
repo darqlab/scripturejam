@@ -17,7 +17,8 @@
   let fallbackMode = $state(false);
   let fallbackText = $state("");
   let search = $state("");
-  let categoryFilter = $state<AvatarCategory | "all">(mode === "group" ? "people" : "all");
+  let categoryFilter = $state<AvatarCategory | "all">("all");
+  $effect(() => { categoryFilter = mode === "group" ? "people" : "all"; });
   let testamentFilter = $state<Testament | "all">("all");
 
   const categories: Array<{ value: AvatarCategory | "all"; label: string }> = [

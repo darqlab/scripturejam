@@ -12,5 +12,5 @@ declare module "qrcode-svg" {
     constructor(options: QRCodeOptions);
     svg(): string;
   }
-  export = QRCode;
+  export default QRCode;
 }

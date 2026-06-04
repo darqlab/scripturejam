@@ -2,7 +2,14 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { storageSet } from "$lib/storage.js";
-  import type { Translation, SessionMode, SessionScope } from "@scripturejam/types";
+  import type {
+    Translation,
+    SessionMode,
+    SessionScope,
+    Question,
+    QuestionPack,
+    Difficulty,
+  } from "@scripturejam/types";
 
   interface PackSummary {
     id: string;
@@ -10,6 +17,19 @@
     description: string;
     ageBand: string;
     questionCount: number;
+  }
+
+  interface DraftQuestion {
+    id: string;
+    prompt: string;
+    options: [string, string, string, string];
+    correctIndex: number;
+    book: string;
+    chapter: number;
+    verseStart: number;
+    verseEnd?: number;
+    difficulty: Difficulty;
+    themes: string; // comma-separated
   }
 
   let translation = $state<Translation>("WEB");
@@ -21,6 +41,27 @@
   let packs = $state<PackSummary[]>([]);
   let selectedPackId = $state<string | null>(null);
   let filterBooks = $state("");
+
+  // Pack authoring state
+  let customTitle = $state("");
+  let customDescription = $state("");
+  let customAgeBand = $state<"youth" | "all-ages">("all-ages");
+  let customQuestions = $state<DraftQuestion[]>([]);
+
+  // Question editor state
+  let showQEditor = $state(false);
+  let editingIndex = $state<number | null>(null);
+
+  // Draft question form
+  let draftPrompt = $state("");
+  let draftOptions = $state(["", "", "", ""]);
+  let draftCorrectIndex = $state(0);
+  let draftBook = $state("");
+  let draftChapter = $state(1);
+  let draftVerseStart = $state(1);
+  let draftVerseEnd = $state<number | undefined>(undefined);
+  let draftDifficulty = $state<Difficulty>("medium");
+  let draftThemes = $state("");
 
   onMount(async () => {
     try {
@@ -48,19 +89,181 @@
       if (books.length === 0) return null;
       return { type: "filter" as const, filter: { books } };
     }
+    // custom tab
+    if (customTitle.trim() === "" || customQuestions.length === 0) return null;
     return {
       type: "custom" as const,
       customPack: {
-        id: "custom-" + Date.now(),
-        title: "Custom",
-        description: "",
-        ageBand: "all-ages" as const,
-        questionIds: [],
+        id: "custom-draft",
+        title: customTitle.trim(),
+        description: customDescription.trim(),
+        ageBand: customAgeBand,
+        questionIds: customQuestions.map((q) => q.id),
       },
     };
   });
 
   let canCreate = $derived(!creating && scope !== null);
+
+  function resetDraftForm() {
+    draftPrompt = "";
+    draftOptions = ["", "", "", ""];
+    draftCorrectIndex = 0;
+    draftBook = "";
+    draftChapter = 1;
+    draftVerseStart = 1;
+    draftVerseEnd = undefined;
+    draftDifficulty = "medium";
+    draftThemes = "";
+  }
+
+  function openAddQuestion() {
+    editingIndex = null;
+    resetDraftForm();
+    showQEditor = true;
+  }
+
+  function openEditQuestion(i: number) {
+    const q = customQuestions[i];
+    editingIndex = i;
+    draftPrompt = q.prompt;
+    draftOptions = [...q.options] as [string, string, string, string];
+    draftCorrectIndex = q.correctIndex;
+    draftBook = q.book;
+    draftChapter = q.chapter;
+    draftVerseStart = q.verseStart;
+    draftVerseEnd = q.verseEnd;
+    draftDifficulty = q.difficulty;
+    draftThemes = q.themes;
+    showQEditor = true;
+  }
+
+  function deleteQuestion(i: number) {
+    customQuestions = customQuestions.filter((_, idx) => idx !== i);
+  }
+
+  let importError = $state<string | null>(null);
+  let importFileInput = $state<HTMLInputElement | null>(null);
+
+  function handleImportFile(e: Event) {
+    importError = null;
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const raw = ev.target?.result as string;
+        const data = JSON.parse(raw) as { pack?: unknown; questions?: unknown[] };
+        if (!data.pack || !Array.isArray(data.questions)) {
+          importError = "Invalid pack file — expected { pack, questions }";
+          return;
+        }
+        const pack = data.pack as QuestionPack;
+        const questions = data.questions as Question[];
+
+        customTitle = pack.title ?? "";
+        customDescription = pack.description ?? "";
+        customAgeBand = pack.ageBand === "youth" ? "youth" : "all-ages";
+
+        customQuestions = questions.map((q): DraftQuestion => {
+          const opts = q.options ?? [];
+          const correctIdx = opts.findIndex((o) => o.id === q.correctOptionId);
+          const ref = q.references?.[0];
+          return {
+            id: q.id ?? crypto.randomUUID(),
+            prompt: q.prompt ?? "",
+            options: [
+              opts[0]?.text ?? "",
+              opts[1]?.text ?? "",
+              opts[2]?.text ?? "",
+              opts[3]?.text ?? "",
+            ],
+            correctIndex: correctIdx >= 0 ? correctIdx : 0,
+            book: ref?.book ?? "",
+            chapter: ref?.chapter ?? 1,
+            verseStart: ref?.verse_start ?? 1,
+            verseEnd: ref?.verse_end,
+            difficulty: (["easy", "medium", "hard"].includes(q.difficulty) ? q.difficulty : "medium") as Difficulty,
+            themes: (q.themes ?? []).join(", "),
+          };
+        });
+
+        // Reset the file input so the same file can be re-imported
+        if (importFileInput) importFileInput.value = "";
+      } catch {
+        importError = "Could not parse file — is it a valid scripturejam pack JSON?";
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  let draftError = $state<string | null>(null);
+
+  function saveQuestion() {
+    draftError = null;
+    if (!draftPrompt.trim()) {
+      draftError = "Question prompt is required.";
+      return;
+    }
+    if (draftOptions.some((o) => !o.trim())) {
+      draftError = "All four answer options must be filled in.";
+      return;
+    }
+    if (!draftBook.trim()) {
+      draftError = "Book is required for the scripture reference.";
+      return;
+    }
+    if (!draftChapter || draftChapter < 1) {
+      draftError = "Chapter must be at least 1.";
+      return;
+    }
+    if (!draftVerseStart || draftVerseStart < 1) {
+      draftError = "Verse start must be at least 1.";
+      return;
+    }
+
+    const dq: DraftQuestion = {
+      id: editingIndex !== null ? customQuestions[editingIndex].id : crypto.randomUUID(),
+      prompt: draftPrompt.trim(),
+      options: draftOptions.map((o) => o.trim()) as [string, string, string, string],
+      correctIndex: draftCorrectIndex,
+      book: draftBook.trim(),
+      chapter: draftChapter,
+      verseStart: draftVerseStart,
+      verseEnd: draftVerseEnd && draftVerseEnd >= draftVerseStart ? draftVerseEnd : undefined,
+      difficulty: draftDifficulty,
+      themes: draftThemes,
+    };
+
+    if (editingIndex !== null) {
+      customQuestions = customQuestions.map((q, i) => (i === editingIndex ? dq : q));
+    } else {
+      customQuestions = [...customQuestions, dq];
+    }
+
+    showQEditor = false;
+    editingIndex = null;
+    resetDraftForm();
+  }
+
+  function cancelEditor() {
+    showQEditor = false;
+    editingIndex = null;
+    draftError = null;
+    resetDraftForm();
+  }
+
+  const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+    easy: "Easy",
+    medium: "Medium",
+    hard: "Hard",
+  };
+
+  const DIFFICULTY_COLORS: Record<Difficulty, string> = {
+    easy: "bg-green-100 text-green-700",
+    medium: "bg-yellow-100 text-yellow-700",
+    hard: "bg-red-100 text-red-700",
+  };
 
   async function createSession() {
     if (!scope) return;
@@ -74,7 +277,10 @@
         body: JSON.stringify({}),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { message?: string; error?: string };
+        const body = (await res.json().catch(() => ({}))) as {
+          message?: string;
+          error?: string;
+        };
         if (res.status === 429 || body.error === "rate_limited") {
           createError = "Too many sessions created — please wait a few minutes and try again";
         } else {
@@ -85,6 +291,54 @@
       }
       const data = (await res.json()) as { code: string; hostToken: string };
       const { code, hostToken } = data;
+
+      if (scopeTab === "custom") {
+        const packId = `custom-${code}`;
+        const pack: QuestionPack = {
+          id: packId,
+          title: customTitle.trim(),
+          description: customDescription.trim(),
+          ageBand: customAgeBand,
+          questionIds: customQuestions.map((q) => q.id),
+        };
+        const questions: Question[] = customQuestions.map((dq) => ({
+          id: dq.id,
+          prompt: dq.prompt,
+          options: dq.options.map((text, i) => ({ id: `opt-${dq.id}-${i}`, text })),
+          correctOptionId: `opt-${dq.id}-${dq.correctIndex}`,
+          references: [
+            {
+              book: dq.book,
+              chapter: dq.chapter,
+              verse_start: dq.verseStart,
+              ...(dq.verseEnd ? { verse_end: dq.verseEnd } : {}),
+            },
+          ],
+          difficulty: dq.difficulty,
+          themes: dq.themes
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+        }));
+
+        const packRes = await fetch(`/api/sessions/${code}/pack`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hostToken, pack, questions }),
+        });
+        if (!packRes.ok) {
+          const body = (await packRes.json().catch(() => ({}))) as { error?: string };
+          createError = body.error ?? "Failed to upload custom pack";
+          creating = false;
+          return;
+        }
+
+        const realScope: SessionScope = { type: "custom", customPack: pack };
+        storageSet(`sj_host_token_${code}`, hostToken);
+        storageSet(`sj_host_scope_${code}`, JSON.stringify({ scope: realScope, translation, mode }));
+        await goto(`/host/${code}`);
+        return;
+      }
 
       storageSet(`sj_host_token_${code}`, hostToken);
       storageSet(`sj_host_scope_${code}`, JSON.stringify({ scope, translation, mode }));
@@ -220,15 +474,289 @@
             {/if}
           </div>
         {:else}
-          <div class="text-center py-6 space-y-2">
-            <p class="text-gray-500 font-medium">Pack authoring</p>
-            <p class="text-sm text-gray-400">
-              Full pack authoring (task 3.15) is not yet available. This will create an empty
-              custom pack — questions can be authored after the session is created.
-            </p>
-            <div class="inline-block mt-2 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
-              Coming in a future phase
+          <!-- Author your own tab -->
+          <div class="space-y-5">
+            <!-- Import from JSON -->
+            <div class="border border-dashed border-gray-200 rounded-xl p-4 space-y-2 bg-gray-50">
+              <p class="text-xs font-medium text-gray-600">Import from a previously exported pack</p>
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input
+                  bind:this={importFileInput}
+                  type="file"
+                  accept=".json,application/json"
+                  onchange={handleImportFile}
+                  class="text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-gray-300 file:bg-white file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-50 file:cursor-pointer"
+                />
+              </label>
+              {#if importError}
+                <p class="text-red-600 text-xs font-medium" role="alert">{importError}</p>
+              {/if}
             </div>
+
+            <!-- Pack metadata -->
+            <div class="space-y-3">
+              <h3 class="text-sm font-semibold text-gray-700">Pack details</h3>
+              <div>
+                <label for="custom-title" class="block text-xs font-medium text-gray-600 mb-1">
+                  Pack title <span class="text-red-500">*</span>
+                </label>
+                <input
+                  id="custom-title"
+                  type="text"
+                  bind:value={customTitle}
+                  placeholder="e.g. Acts of the Apostles"
+                  maxlength="80"
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] text-sm"
+                  autocomplete="off"
+                />
+              </div>
+              <div>
+                <label for="custom-desc" class="block text-xs font-medium text-gray-600 mb-1">
+                  Description <span class="text-gray-400">(optional)</span>
+                </label>
+                <input
+                  id="custom-desc"
+                  type="text"
+                  bind:value={customDescription}
+                  placeholder="Short description for players"
+                  maxlength="200"
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] text-sm"
+                  autocomplete="off"
+                />
+              </div>
+              <fieldset>
+                <legend class="text-xs font-medium text-gray-600 mb-1">Age band</legend>
+                <div class="flex gap-4">
+                  {#each [["all-ages", "All ages"], ["youth", "Youth"]] as [val, lbl]}
+                    <label class="flex items-center gap-2 cursor-pointer min-h-[36px]">
+                      <input
+                        type="radio"
+                        bind:group={customAgeBand}
+                        value={val}
+                        class="w-4 h-4 accent-blue-600"
+                      />
+                      <span class="text-sm">{lbl}</span>
+                    </label>
+                  {/each}
+                </div>
+              </fieldset>
+            </div>
+
+            <!-- Question list -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-semibold text-gray-700">
+                  Questions ({customQuestions.length})
+                </h3>
+                {#if customQuestions.length > 0 && customQuestions.length < 5}
+                  <span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                    Need {5 - customQuestions.length} more to start
+                  </span>
+                {/if}
+              </div>
+
+              {#if customQuestions.length === 0}
+                <div class="text-center py-6 border border-dashed border-gray-200 rounded-lg text-sm text-gray-400">
+                  No questions yet — add one below.
+                </div>
+              {:else}
+                <div class="space-y-2 mb-3">
+                  {#each customQuestions as q, i}
+                    <div class="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <span class="text-xs text-gray-400 w-5 shrink-0">{i + 1}.</span>
+                      <p class="flex-1 text-sm text-gray-800 truncate">{q.prompt}</p>
+                      <span class="text-xs px-2 py-0.5 rounded-full shrink-0 {DIFFICULTY_COLORS[q.difficulty]}">
+                        {DIFFICULTY_LABELS[q.difficulty]}
+                      </span>
+                      <button
+                        type="button"
+                        onclick={() => openEditQuestion(i)}
+                        class="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded shrink-0"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onclick={() => deleteQuestion(i)}
+                        class="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded shrink-0"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+
+              {#if !showQEditor}
+                <button
+                  type="button"
+                  onclick={openAddQuestion}
+                  class="w-full border border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 rounded-lg py-2.5 text-sm font-medium transition-colors"
+                >
+                  + Add question
+                </button>
+              {/if}
+            </div>
+
+            <!-- Question editor panel -->
+            {#if showQEditor}
+              <div class="border border-blue-200 bg-blue-50/40 rounded-xl p-4 space-y-4">
+                <h4 class="text-sm font-semibold text-gray-800">
+                  {editingIndex !== null ? "Edit question" : "Add question"}
+                </h4>
+
+                <!-- Prompt -->
+                <div>
+                  <label for="draft-prompt" class="block text-xs font-medium text-gray-600 mb-1">
+                    Question prompt <span class="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="draft-prompt"
+                    bind:value={draftPrompt}
+                    placeholder="e.g. Who was the first king of Israel?"
+                    maxlength="500"
+                    rows="3"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none"
+                  ></textarea>
+                </div>
+
+                <!-- Options A–D -->
+                <div>
+                  <p class="text-xs font-medium text-gray-600 mb-2">
+                    Answer options <span class="text-red-500">*</span>
+                    <span class="text-gray-400 font-normal ml-1">(select the correct one)</span>
+                  </p>
+                  <div class="space-y-2">
+                    {#each ["A", "B", "C", "D"] as letter, i}
+                      <label class="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          bind:group={draftCorrectIndex}
+                          value={i}
+                          class="w-4 h-4 accent-blue-600 shrink-0"
+                        />
+                        <span class="text-xs font-bold text-gray-500 w-4 shrink-0">{letter}</span>
+                        <input
+                          type="text"
+                          bind:value={draftOptions[i]}
+                          placeholder="Option {letter}"
+                          class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[40px]"
+                          autocomplete="off"
+                        />
+                      </label>
+                    {/each}
+                  </div>
+                </div>
+
+                <!-- Scripture reference -->
+                <div>
+                  <p class="text-xs font-medium text-gray-600 mb-2">
+                    Scripture reference <span class="text-red-500">*</span>
+                  </p>
+                  <div class="flex flex-wrap gap-2 items-end">
+                    <div class="flex-1 min-w-[120px]">
+                      <label for="draft-book" class="block text-xs text-gray-500 mb-1">Book</label>
+                      <input
+                        id="draft-book"
+                        type="text"
+                        bind:value={draftBook}
+                        placeholder="e.g. John"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[40px]"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="w-20">
+                      <label for="draft-chapter" class="block text-xs text-gray-500 mb-1">Chapter</label>
+                      <input
+                        id="draft-chapter"
+                        type="number"
+                        bind:value={draftChapter}
+                        min="1"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[40px]"
+                      />
+                    </div>
+                    <div class="w-20">
+                      <label for="draft-verse-start" class="block text-xs text-gray-500 mb-1">Verse</label>
+                      <input
+                        id="draft-verse-start"
+                        type="number"
+                        bind:value={draftVerseStart}
+                        min="1"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[40px]"
+                      />
+                    </div>
+                    <div class="w-24">
+                      <label for="draft-verse-end" class="block text-xs text-gray-500 mb-1">
+                        – end verse <span class="text-gray-400">(opt.)</span>
+                      </label>
+                      <input
+                        id="draft-verse-end"
+                        type="number"
+                        bind:value={draftVerseEnd}
+                        min={draftVerseStart}
+                        placeholder="–"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[40px]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Difficulty -->
+                <fieldset>
+                  <legend class="text-xs font-medium text-gray-600 mb-2">Difficulty</legend>
+                  <div class="flex gap-4">
+                    {#each (["easy", "medium", "hard"] as Difficulty[]) as d}
+                      <label class="flex items-center gap-2 cursor-pointer min-h-[36px]">
+                        <input
+                          type="radio"
+                          bind:group={draftDifficulty}
+                          value={d}
+                          class="w-4 h-4 accent-blue-600"
+                        />
+                        <span class="text-sm">{DIFFICULTY_LABELS[d]}</span>
+                      </label>
+                    {/each}
+                  </div>
+                </fieldset>
+
+                <!-- Themes -->
+                <div>
+                  <label for="draft-themes" class="block text-xs font-medium text-gray-600 mb-1">
+                    Themes <span class="text-gray-400">(optional, comma-separated)</span>
+                  </label>
+                  <input
+                    id="draft-themes"
+                    type="text"
+                    bind:value={draftThemes}
+                    placeholder="e.g. faith, prayer, miracles"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[40px]"
+                    autocomplete="off"
+                  />
+                </div>
+
+                {#if draftError}
+                  <p class="text-red-600 text-xs font-medium" role="alert">{draftError}</p>
+                {/if}
+
+                <!-- Editor actions -->
+                <div class="flex gap-3 pt-1">
+                  <button
+                    type="button"
+                    onclick={saveQuestion}
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors min-h-[40px]"
+                  >
+                    Save question
+                  </button>
+                  <button
+                    type="button"
+                    onclick={cancelEditor}
+                    class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors min-h-[40px]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>

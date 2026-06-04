@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { redis } from "../redis/client.js";
 import { config } from "../config.js";
-import type { SessionState, SessionMode, Translation, SessionScope } from "@scripturejam/types";
+import type { SessionState, SessionMode, Translation, SessionScope, Question } from "@scripturejam/types";
 
 export interface LiveAnswerRecord {
   optionId: string;
@@ -37,6 +37,7 @@ export interface LiveSession {
   gameStartedAt: number | null;
   players: Record<string, LivePlayerState>;
   createdAt: number;
+  customPackQuestions?: Record<string, Question>;
 }
 
 const key = (code: string) => `session:${code}`;

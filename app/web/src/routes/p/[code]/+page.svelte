@@ -18,18 +18,8 @@
 
   const SHAPES = ["▲", "●", "■", "◆"];
   const SHAPE_LABELS = ["Triangle", "Circle", "Square", "Diamond"];
-  const OPTION_COLORS = [
-    "bg-red-500 hover:bg-red-600 border-red-700",
-    "bg-blue-500 hover:bg-blue-600 border-blue-700",
-    "bg-amber-400 hover:bg-amber-500 border-amber-600",
-    "bg-green-500 hover:bg-green-600 border-green-700",
-  ];
-  const OPTION_COLORS_LOCKED = [
-    "bg-red-300 border-red-400",
-    "bg-blue-300 border-blue-400",
-    "bg-amber-200 border-amber-400",
-    "bg-green-300 border-green-400",
-  ];
+  // Keys map to CSS custom properties --color-option-{a,b,c,d} (a=blue/▲, b=red/●, c=amber/■, d=green/◆)
+  const OPTION_KEYS = ["a", "b", "c", "d"] as const;
 
   let timerProgress = $state(100);
   let timerRaf = $state<number | null>(null);
@@ -289,14 +279,13 @@
             type="button"
             onclick={() => submitAnswer(option.id)}
             disabled={locked || answerSubmitting}
+            style="background-color: var(--color-option-{OPTION_KEYS[i]})"
             class="
-              flex items-center gap-3 px-4 py-3 rounded-xl border-2 font-semibold text-white
+              flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-black/20 font-semibold text-white
               min-h-[56px] transition-all active:scale-95
-              {locked
-                ? isPick
-                  ? OPTION_COLORS_LOCKED[i] + ' ring-4 ring-white/60 scale-95'
-                  : 'bg-gray-700 border-gray-600 opacity-40'
-                : OPTION_COLORS[i]}
+              {!locked ? 'hover:brightness-90' : ''}
+              {locked && isPick ? 'ring-4 ring-white/60 scale-95' : ''}
+              {locked && !isPick ? 'opacity-40' : ''}
             "
             aria-label="{SHAPE_LABELS[i]}: {option.text}"
           >

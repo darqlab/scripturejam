@@ -30,6 +30,7 @@
   let startError = $state<string | null>(null);
   let advancing = $state(false);
   let copyDone = $state(false);
+  let isCustomPack = $state(false);
 
   function startTimer(startedAt: number, durationMs: number) {
     if (timerRaf !== null) cancelAnimationFrame(timerRaf);
@@ -61,6 +62,14 @@
     }
 
     hostStore.setCredentials(code, hostToken);
+
+    const scopeRaw = storageGet(`sj_host_scope_${code}`);
+    if (scopeRaw) {
+      try {
+        const parsed = JSON.parse(scopeRaw) as { scope?: { type?: string } };
+        isCustomPack = parsed.scope?.type === "custom";
+      } catch { /* ignore */ }
+    }
 
     const socket = connectSocket();
 
@@ -207,6 +216,21 @@
     });
   }
 
+  async function downloadPack() {
+    const hostToken = storageGet(`sj_host_token_${code}`);
+    if (!hostToken) return;
+    const res = await fetch(`/api/sessions/${code}/pack.json?hostToken=${encodeURIComponent(hostToken)}`);
+    if (!res.ok) return;
+    const json = await res.text();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `scripturejam-pack-${code}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function copyShareLink() {
     const link = `${window.location.origin}/r/${code}`;
     try {
@@ -269,6 +293,16 @@
         <div class="text-center text-sm text-gray-400">
           <span class="text-2xl font-bold text-white">{visiblePlayers.length}</span> player{visiblePlayers.length === 1 ? "" : "s"} joined
         </div>
+
+        {#if isCustomPack}
+          <button
+            type="button"
+            onclick={downloadPack}
+            class="w-full border border-gray-600 text-gray-300 hover:bg-gray-800 font-medium py-2.5 rounded-xl text-sm min-h-[44px] transition-colors"
+          >
+            Download pack ↓
+          </button>
+        {/if}
 
         {#if startError}
           <p class="text-red-400 text-sm" role="alert">{startError}</p>

@@ -191,22 +191,23 @@
         </div>
 
         <div>
-          <label for="nickname" class="block text-sm font-medium text-gray-700 mb-1">Your name</label>
+          <label for="nickname" class="block text-sm font-medium text-gray-700 mb-1">{mode === "group" ? "Team name" : "Your name"}</label>
           <input
             id="nickname"
             type="text"
             bind:value={nickname}
             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-base min-h-[44px]"
             maxlength="24"
-            placeholder="Enter your name"
+            placeholder={mode === "group" ? "Enter team name" : "Enter your name"}
             required
             autocomplete="off"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Avatar</label>
+          <label for="avatar-btn" class="block text-sm font-medium text-gray-700 mb-1">Avatar</label>
           <button
+            id="avatar-btn"
             type="button"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] text-left flex items-center gap-3 bg-white hover:bg-gray-50 transition-colors"
             onclick={() => (showAvatarPicker = true)}

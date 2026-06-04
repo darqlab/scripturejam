@@ -33,7 +33,10 @@ export async function startQuestion(code: string): Promise<void> {
 
   const { questions } = getContent();
   const questionId = session.questionIds[nextIndex];
-  const question = questions.get(questionId);
+  const question =
+    session.scope.type === "custom"
+      ? session.customPackQuestions?.[questionId]
+      : questions.get(questionId);
   if (!question) {
     logger.error("Question not found", { code, questionId });
     return;
@@ -77,7 +80,10 @@ export async function revealQuestion(code: string): Promise<void> {
 
   const questionId = session.questionIds[session.currentIndex];
   const { questions, bible } = getContent();
-  const question = questions.get(questionId);
+  const question =
+    session.scope.type === "custom"
+      ? session.customPackQuestions?.[questionId]
+      : questions.get(questionId);
   if (!question) {
     logger.error("Question not found during reveal", { code, questionId });
     return;

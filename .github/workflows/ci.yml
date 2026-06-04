@@ -39,6 +39,55 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+  integration:
+    name: Integration tests (real Redis + Postgres)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: sj
+          POSTGRES_PASSWORD: sj
+          POSTGRES_DB: sj
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://sj:sj@localhost:5432/sj
+      REDIS_URL: redis://localhost:6379
+      IP_HASH_SECRET: test-secret-at-least-16-chars
+      QUESTION_DURATION_MS: "500"
+      MIN_QUESTIONS_TO_START: "1"
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: app/.nvmrc
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Integration tests
+        run: pnpm --filter @scripturejam/server test:integration
+
   content-schema:
     name: Content schema validation
     runs-on: ubuntu-latest

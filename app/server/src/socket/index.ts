@@ -1,6 +1,7 @@
 import type { Server as HttpServer } from "node:http";
 import { Server } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
+import { z } from "zod";
 import type { ServerToClientEvents, ClientToServerEvents } from "@scripturejam/types";
 import { redis } from "../redis/client.js";
 import { config } from "../config.js";
@@ -9,6 +10,27 @@ import { getSession, saveSession, generateToken, generatePlayerId } from "../ses
 import { startQuestion, revealQuestion, finalizeSession, clearTimer } from "../game/engine.js";
 import { getContent } from "../content/loader.js";
 import { setIo, type SocketData, type TypedServer } from "./io.js";
+
+const joinSchema = z.object({
+  code: z.string().length(6).regex(/^[A-Z0-9]{6}$/),
+  nickname: z.string().min(1).max(24),
+  avatarId: z.string().min(1).max(64),
+  resumeToken: z.string().optional(),
+});
+
+const hostConnectSchema = z.object({
+  code: z.string().length(6).regex(/^[A-Z0-9]{6}$/),
+  hostToken: z.string().min(16).max(128),
+});
+
+const answerSchema = z.object({
+  questionId: z.string().min(1).max(128),
+  optionId: z.string().min(1).max(64),
+});
+
+const kickSchema = z.object({
+  playerId: z.string().min(1).max(128),
+});
 
 export type { TypedServer };
 
@@ -33,7 +55,11 @@ export function attachSocketServer(httpServer: HttpServer): TypedServer {
     logger.debug("Socket connected", { socketId: socket.id });
 
     // ── JOIN (player) ─────────────────────────────────────────────────────
-    socket.on("JOIN", async ({ code, nickname, avatarId, resumeToken }, ack) => {
+    socket.on("JOIN", async (data, ack) => {
+      const parsed = joinSchema.safeParse(data);
+      if (!parsed.success) return ack({ ok: false, reason: "session_not_found" });
+      const { code, nickname, avatarId, resumeToken } = parsed.data;
+
       const session = await getSession(code);
       if (!session) return ack({ ok: false, reason: "session_not_found" });
       if (session.state === "final") return ack({ ok: false, reason: "session_ended" });
@@ -115,7 +141,11 @@ export function attachSocketServer(httpServer: HttpServer): TypedServer {
     });
 
     // ── HOST_CONNECT ──────────────────────────────────────────────────────
-    socket.on("HOST_CONNECT", async ({ code, hostToken }, ack) => {
+    socket.on("HOST_CONNECT", async (data, ack) => {
+      const parsed = hostConnectSchema.safeParse(data);
+      if (!parsed.success) return ack({ ok: false, reason: "session_not_found" });
+      const { code, hostToken } = parsed.data;
+
       const session = await getSession(code);
       if (!session) return ack({ ok: false, reason: "session_not_found" });
       if (session.hostToken !== hostToken) return ack({ ok: false, reason: "invalid_host_token" });
@@ -148,7 +178,11 @@ export function attachSocketServer(httpServer: HttpServer): TypedServer {
     });
 
     // ── ANSWER (player) ───────────────────────────────────────────────────
-    socket.on("ANSWER", async ({ questionId, optionId }, ack) => {
+    socket.on("ANSWER", async (data, ack) => {
+      const parsed = answerSchema.safeParse(data);
+      if (!parsed.success) return ack({ ok: false, reason: "wrong_question" });
+      const { questionId, optionId } = parsed.data;
+
       const { code, playerId } = socket.data;
       if (!code || !playerId) return ack({ ok: false, reason: "wrong_question" });
 
@@ -218,7 +252,11 @@ export function attachSocketServer(httpServer: HttpServer): TypedServer {
     });
 
     // ── KICK (host) ───────────────────────────────────────────────────────
-    socket.on("KICK", async ({ playerId }, ack) => {
+    socket.on("KICK", async (data, ack) => {
+      const parsed = kickSchema.safeParse(data);
+      if (!parsed.success) return ack({ ok: false, reason: "player_not_found" });
+      const { playerId } = parsed.data;
+
       const { code, role } = socket.data;
       if (!code || role !== "host") return ack({ ok: false, reason: "player_not_found" });
 

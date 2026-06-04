@@ -29,23 +29,6 @@ export async function svgRoutes(app: FastifyInstance) {
     }
   });
 
-  app.get("/api/packs", async (_req, reply) => {
-    try {
-      const { packs } = getContent();
-      return reply.send(
-        Array.from(packs.values()).map((p) => ({
-          id: p.id,
-          title: p.title,
-          description: p.description,
-          ageBand: p.ageBand,
-          questionCount: p.questionIds.length,
-        }))
-      );
-    } catch {
-      return reply.send([]);
-    }
-  });
-
   // QR code for player join URL (task 2.15)
   app.get<{ Params: { code: string } }>("/api/sessions/:code/qr.svg", async (req, reply) => {
     const { code } = req.params;

@@ -224,13 +224,14 @@ describe.skipIf(skipIntegration)("Integration — session lifecycle", () => {
       const hostReveal1P = waitFor(hostSock, "REVEAL");
       const playerReveal1Promises = playerSockets.map((s) => waitFor(s, "REVEAL"));
 
-      // Use the first option id — correct or not doesn't matter for the flow test
+      // Use the first option id — correct or not doesn't matter for the flow test.
+      // Send answers sequentially (await each ACK) to avoid a Redis race: concurrent
+      // writes from the same Node process can interleave getSession/saveSession calls,
+      // causing later saves to overwrite earlier answers.
       const pick1 = q1.options[0].id;
-      await Promise.all(
-        playerSockets.map((sock) =>
-          emit<AnswerAck>(sock, "ANSWER", { questionId: q1.questionId, optionId: pick1 })
-        )
-      );
+      for (const sock of playerSockets) {
+        await emit<AnswerAck>(sock, "ANSWER", { questionId: q1.questionId, optionId: pick1 });
+      }
 
       // 7. REVEAL — verify scoring fields ─────────────────────────────────────
       const hostReveal1 = (await hostReveal1P) as RevealPayloadHost;
@@ -270,11 +271,9 @@ describe.skipIf(skipIntegration)("Integration — session lifecycle", () => {
       const playerReveal2Promises = playerSockets.map((s) => waitFor(s, "REVEAL"));
 
       const pick2 = q2.options[0].id;
-      await Promise.all(
-        playerSockets.map((sock) =>
-          emit<AnswerAck>(sock, "ANSWER", { questionId: q2.questionId, optionId: pick2 })
-        )
-      );
+      for (const sock of playerSockets) {
+        await emit<AnswerAck>(sock, "ANSWER", { questionId: q2.questionId, optionId: pick2 });
+      }
 
       const hostReveal2 = (await hostReveal2P) as RevealPayloadHost;
       expect(hostReveal2.questionId).toBe(q2.questionId);

@@ -117,7 +117,10 @@ def _call_api(
     user_message: str,
     retry_note: str = "",
 ) -> tuple[str, int, int]:
-    """Call the API with prompt caching on the system prompt. Returns (text, input_tokens, output_tokens)."""
+    """Call the API with prompt caching on the system prompt.
+
+    Returns (text, input_tokens, output_tokens).
+    """
     messages = [{"role": "user", "content": user_message}]
     if retry_note:
         messages.append({"role": "assistant", "content": "questions:"})

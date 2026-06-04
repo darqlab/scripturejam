@@ -30,6 +30,9 @@ jobs:
       - name: Typecheck (server)
         run: pnpm --filter @scripturejam/server typecheck
 
+      - name: Sync SvelteKit (generates .svelte-kit/tsconfig.json)
+        run: pnpm --filter @scripturejam/web exec svelte-kit sync
+
       - name: Typecheck (web)
         run: pnpm --filter @scripturejam/web typecheck
 

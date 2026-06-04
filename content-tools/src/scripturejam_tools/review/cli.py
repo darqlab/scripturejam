@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
-from typing import Optional
 
 import typer
 import yaml
@@ -139,7 +137,7 @@ def _save_staging(path: Path, questions: list) -> None:
         yaml.safe_dump({"questions": questions}, fh, allow_unicode=True, sort_keys=False)
 
 
-def _load_pack_meta(pack_meta_json: Optional[str]) -> dict:
+def _load_pack_meta(pack_meta_json: str | None) -> dict:
     """Load pack metadata from a JSON string or prompt interactively."""
     if pack_meta_json:
         try:
@@ -162,10 +160,10 @@ def review(
         str(_TOOLS_ROOT.parent / "content" / "bible"),
         help="Directory with indexed Bible YAML",
     ),
-    output: Optional[str] = typer.Option(
+    output: str | None = typer.Option(
         None, help="Approved pack output path (defaults to <pack-id>.yaml in current dir)"
     ),
-    pack_meta: Optional[str] = typer.Option(
+    pack_meta: str | None = typer.Option(
         None, "--pack-meta", help="Pack metadata as JSON string"
     ),
 ):
@@ -251,7 +249,7 @@ def review(
                     approved_ids.add(qid)
                     total_accepted += 1
                     total_reviewed += 1
-                    console.print(f"[green]Accepted.[/green]")
+                    console.print("[green]Accepted.[/green]")
                     break
 
                 elif choice == "r":
@@ -259,7 +257,7 @@ def review(
                     q[REJECTED_MARKER] = True
                     total_rejected += 1
                     total_reviewed += 1
-                    console.print(f"[red]Rejected.[/red]")
+                    console.print("[red]Rejected.[/red]")
                     break
 
                 elif choice == "e":

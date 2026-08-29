@@ -44,22 +44,44 @@ Hard rules:
 Output a single YAML document with a top-level \`questions:\` list. No prose
 before or after. No markdown code fences around the YAML.`;
 
+export interface ChapterRange {
+  start: number;
+  end: number;
+}
+
+export type DifficultyChoice = "easy" | "medium" | "hard" | "mixed";
+
 function buildUserPrompt(
   book: string,
   count: number,
   ageBand: "youth" | "all-ages",
   packTitle: string,
-  packDescription: string
+  packDescription: string,
+  chapterRange: ChapterRange | undefined,
+  difficulty: DifficultyChoice
 ): string {
-  const easy = Math.round(count * 0.4);
-  const medium = Math.round(count * 0.4);
-  const hard = Math.max(0, count - easy - medium);
+  let easy: number;
+  let medium: number;
+  let hard: number;
+  if (difficulty === "mixed") {
+    easy = Math.round(count * 0.4);
+    medium = Math.round(count * 0.4);
+    hard = Math.max(0, count - easy - medium);
+  } else {
+    easy = difficulty === "easy" ? count : 0;
+    medium = difficulty === "medium" ? count : 0;
+    hard = difficulty === "hard" ? count : 0;
+  }
+
+  const scopeLine = chapterRange
+    ? `${book} chapter${chapterRange.start === chapterRange.end ? "" : "s"} ${chapterRange.start}${chapterRange.start === chapterRange.end ? "" : `-${chapterRange.end}`} only`
+    : `${book} (whole book, no chapter restriction)`;
 
   return `Pack: ${packTitle}
 Description: ${packDescription}
 Audience: ${ageBand}
 Allowed scope (questions may only cite these passages):
-${book} (whole book, no chapter restriction)
+${scopeLine}
 
 Generate ${count} candidate questions for this pack. Target difficulty mix:
 - easy:   ${easy}
@@ -110,15 +132,29 @@ const generationResponseSchema = z.object({
 export async function generateQuestionsForBook(
   book: string,
   count: number,
-  ageBand: "youth" | "all-ages"
+  ageBand: "youth" | "all-ages",
+  chapterRange?: ChapterRange,
+  difficulty: DifficultyChoice = "mixed"
 ): Promise<{ pack: QuestionPack; questions: Question[] }> {
   if (!config.NVIDIA_API_KEY) {
     throw new GenerationNotConfiguredError("NVIDIA_API_KEY is not set");
   }
 
-  const packTitle = `Generated: ${book}`;
-  const packDescription = `AI-generated questions from the book of ${book}.`;
-  const userPrompt = buildUserPrompt(book, count, ageBand, packTitle, packDescription);
+  const packTitle = chapterRange
+    ? `Generated: ${book} ${chapterRange.start}-${chapterRange.end}`
+    : `Generated: ${book}`;
+  const packDescription = chapterRange
+    ? `AI-generated questions from ${book} chapters ${chapterRange.start}-${chapterRange.end}.`
+    : `AI-generated questions from the book of ${book}.`;
+  const userPrompt = buildUserPrompt(
+    book,
+    count,
+    ageBand,
+    packTitle,
+    packDescription,
+    chapterRange,
+    difficulty
+  );
 
   const client = new OpenAI({ baseURL: config.NVIDIA_BASE_URL, apiKey: config.NVIDIA_API_KEY });
 
@@ -177,11 +213,16 @@ export async function generateQuestionsForBook(
     const q = result.data;
 
     // Known failure mode: don't trust the model's own self-check — verify
-    // every reference actually cites the requested book.
-    const matchesBook = q.references.some(
-      (ref) => ref.book.trim().toLowerCase() === book.trim().toLowerCase()
-    );
-    if (!matchesBook) {
+    // every reference actually cites the requested book (and chapter range,
+    // when one was requested).
+    const matchesScope = q.references.some((ref) => {
+      if (ref.book.trim().toLowerCase() !== book.trim().toLowerCase()) return false;
+      if (chapterRange) {
+        return ref.chapter >= chapterRange.start && ref.chapter <= chapterRange.end;
+      }
+      return true;
+    });
+    if (!matchesScope) {
       continue;
     }
 
@@ -203,6 +244,8 @@ export async function generateQuestionsForBook(
 
   logger.info("Question generation succeeded", {
     book,
+    chapterRange,
+    difficulty,
     requestedCount: count,
     returnedCount: questions.length,
     elapsedMs: Date.now() - startedAt,
@@ -214,7 +257,7 @@ export async function generateQuestionsForBook(
     .replace(/(^-|-$)/g, "");
 
   const pack: QuestionPack = {
-    id: `generated-${slug}-${timestamp}`,
+    id: `generated-${slug}${chapterRange ? `-${chapterRange.start}-${chapterRange.end}` : ""}-${timestamp}`,
     title: packTitle,
     description: packDescription,
     ageBand,

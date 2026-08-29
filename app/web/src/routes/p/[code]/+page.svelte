@@ -266,10 +266,8 @@
       </div>
     </div>
 
-    <div class="flex-1 flex flex-col px-4 pb-4">
-      <div class="flex-1 flex items-center justify-center py-6">
-        <p class="text-xl font-semibold text-center leading-relaxed max-w-sm">{q.prompt}</p>
-      </div>
+    <div class="flex-1 flex flex-col px-4 pb-4 justify-center">
+      <p class="text-center text-gray-400 text-sm mb-6">Look at the host screen for the question</p>
 
       <div class="grid grid-cols-1 gap-3 max-w-sm mx-auto w-full">
         {#each q.options as option, i}
@@ -302,7 +300,6 @@
   </main>
 {:else if $gameStore.sessionState === "reveal" && $gameStore.revealData}
   {@const r = $gameStore.revealData}
-  {@const q = $gameStore.currentQuestion}
   <main class="min-h-screen flex flex-col bg-gray-900 text-white px-4 py-6">
     <div class="max-w-sm mx-auto w-full space-y-5">
       <div class="rounded-2xl p-6 text-center {r.yourCorrect ? 'bg-green-600' : 'bg-red-600'}">
@@ -313,25 +310,7 @@
         {/if}
       </div>
 
-      {#if q}
-        {@const correctOpt = q.options.find((o) => o.id === r.correctOptionId)}
-        {#if correctOpt}
-          <div class="bg-gray-800 rounded-xl p-4">
-            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Correct answer</p>
-            <p class="font-semibold">{correctOpt.text}</p>
-          </div>
-        {/if}
-      {/if}
-
-      {#if r.verseText}
-        <div class="bg-blue-900/60 rounded-xl p-4 space-y-2">
-          <p class="text-xs text-blue-300 uppercase tracking-wide">
-            {r.references.map((ref) => `${ref.book} ${ref.chapter}:${ref.verse_start}${ref.verse_end && ref.verse_end !== ref.verse_start ? '–' + ref.verse_end : ''}`).join("; ")}
-            — {r.translation}
-          </p>
-          <p class="text-sm leading-relaxed italic">{r.verseText}</p>
-        </div>
-      {/if}
+      <p class="text-center text-gray-400 text-sm">See the host screen for the correct answer and scripture</p>
 
       <div class="bg-gray-800 rounded-xl p-4 flex items-center justify-between">
         <div>

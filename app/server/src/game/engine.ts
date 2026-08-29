@@ -140,6 +140,8 @@ export async function revealQuestion(code: string): Promise<void> {
     perQuestionTop5: perQTop.slice(0, 5),
     answeredCount,
     playerCount: ranked.length,
+    verseText,
+    translation: session.translation,
   });
 
   for (const player of Object.values(session.players)) {

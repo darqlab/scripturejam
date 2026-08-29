@@ -424,10 +424,14 @@
             {/each}
           </div>
 
-          <div class="bg-blue-950/60 border border-blue-800/40 rounded-xl p-4 space-y-1">
+          <div class="bg-blue-950/60 border border-blue-800/40 rounded-xl p-4 space-y-2">
             <p class="text-xs text-blue-300 uppercase tracking-wide font-medium">
               {r.references.map((ref) => `${ref.book} ${ref.chapter}:${ref.verse_start}${ref.verse_end && ref.verse_end !== ref.verse_start ? '–' + ref.verse_end : ''}`).join("; ")}
+              {#if r.verseText}— {r.translation}{/if}
             </p>
+            {#if r.verseText}
+              <p class="text-base leading-relaxed italic">{r.verseText}</p>
+            {/if}
           </div>
         </div>
 

@@ -118,6 +118,8 @@ export interface RevealPayloadHost {
   }>;
   answeredCount: number;
   playerCount: number;
+  verseText: string;
+  translation: Translation;
 }
 
 export interface FinalPayloadHost {

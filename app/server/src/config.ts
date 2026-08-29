@@ -29,7 +29,13 @@ const schema = z.object({
     .positive()
     .default(14_400),
 
-  // Rate limits
+  // Rate limits — only meaningful once the deployment is reachable from the
+  // public internet (DEC-009). LAN-only/local testing deployments should set
+  // RATE_LIMIT_ENABLED=false rather than raising the thresholds.
+  RATE_LIMIT_ENABLED: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .default("true"),
   RATE_LIMIT_PER_IP_PER_HOUR: z.coerce.number().int().positive().default(5),
   RATE_LIMIT_GLOBAL_PER_HOUR: z.coerce.number().int().positive().default(100),
 

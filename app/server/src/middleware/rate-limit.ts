@@ -19,6 +19,11 @@ export async function checkSessionCreationRateLimit(
 ): Promise<RateLimitResult> {
   const ip = req.ip;
   const ipHash = hashIp(ip);
+
+  if (!config.RATE_LIMIT_ENABLED) {
+    return { allowed: true, ipHash };
+  }
+
   const hourKey = Math.floor(Date.now() / 3_600_000);
   const ipKey = `rl:ip:${ipHash}:${hourKey}`;
   const globalKey = `rl:global:${hourKey}`;

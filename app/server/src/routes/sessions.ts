@@ -11,7 +11,14 @@ import { sessionAudit } from "../db/schema.js";
 import { redis } from "../redis/client.js";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
+import { BIBLE_BOOKS } from "@scripturejam/types";
 import type { SessionScope, Translation, SessionMode, Question, QuestionPack } from "@scripturejam/types";
+import { questionSchema, questionPackSchema } from "../content/schemas.js";
+import {
+  generateQuestionsForBook,
+  GenerationNotConfiguredError,
+  GenerationFailedError,
+} from "../content/generate.js";
 
 const bookChapterRangeSchema = z.object({
   start: z.number().int(),
@@ -47,41 +54,6 @@ const startSessionBodySchema = z.object({
   scope: sessionScopeSchema,
   translation: z.enum(["KJV", "WEB", "ASV"]).optional(),
   mode: z.enum(["individual", "group"]).optional(),
-});
-
-const referenceSchema = z.object({
-  book: z.string(),
-  chapter: z.number().int(),
-  verse_start: z.number().int(),
-  verse_end: z.number().int().optional(),
-});
-
-const questionOptionSchema = z.object({
-  id: z.string(),
-  text: z.string(),
-});
-
-const questionSchema = z.object({
-  id: z.string(),
-  prompt: z.string(),
-  options: z.array(questionOptionSchema).min(2).max(4),
-  correctOptionId: z.string(),
-  references: z.array(referenceSchema),
-  difficulty: z.enum(["easy", "medium", "hard"]),
-  themes: z.array(z.string()),
-}).superRefine((q, ctx) => {
-  const optionIds = q.options.map((o) => o.id);
-  if (!optionIds.includes(q.correctOptionId)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "correctOptionId must match one of the option ids", path: ["correctOptionId"] });
-  }
-});
-
-const questionPackSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  description: z.string(),
-  ageBand: z.enum(["youth", "all-ages"]),
-  questionIds: z.array(z.string()).min(1),
 });
 
 const customPackPayloadSchema = z.object({
@@ -238,6 +210,58 @@ export async function sessionRoutes(app: FastifyInstance) {
       }
 
       return applyCustomPack(code, hostToken, parsed.data.pack, parsed.data.questions, reply);
+    }
+  );
+
+  const generateBodySchema = z.object({
+    hostToken: z.string().min(16).max(128),
+    book: z.string().min(1),
+    count: z.coerce.number().int().positive().optional(),
+    ageBand: z.enum(["youth", "all-ages"]).optional(),
+  });
+
+  app.post<{ Params: { code: string } }>(
+    "/api/sessions/:code/generate",
+    async (req, reply) => {
+      const { code } = req.params;
+
+      const parsed = generateBodySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: "invalid_request", details: parsed.error.flatten() });
+      }
+      const { hostToken, book, count, ageBand } = parsed.data;
+
+      const session = await getSession(code);
+      if (!session) return reply.status(404).send({ error: "session_not_found" });
+      if (session.hostToken !== hostToken) return reply.status(403).send({ error: "invalid_host_token" });
+      if (session.state !== "lobby") return reply.status(409).send({ error: "session_already_started" });
+
+      const canonicalBook = BIBLE_BOOKS.find((b) => b.toLowerCase() === book.trim().toLowerCase());
+      if (!canonicalBook) {
+        return reply.status(422).send({ error: "unknown_book" });
+      }
+
+      const maxAllowed = Math.min(config.MAX_GENERATE_QUESTIONS, config.MAX_QUESTIONS_PER_CUSTOM_PACK);
+      const requestedCount = Math.max(5, Math.min(count ?? 10, maxAllowed));
+
+      try {
+        const { pack, questions } = await generateQuestionsForBook(
+          canonicalBook,
+          requestedCount,
+          ageBand ?? "all-ages"
+        );
+        return reply.send({ pack, questions });
+      } catch (err) {
+        if (err instanceof GenerationNotConfiguredError) {
+          return reply.status(503).send({ error: "generation_not_configured" });
+        }
+        if (err instanceof GenerationFailedError) {
+          logger.error("Question generation failed", { code, book: canonicalBook, cause: err.cause });
+          return reply.status(502).send({ error: "generation_failed" });
+        }
+        logger.error("Question generation failed (unexpected)", { code, book: canonicalBook, err });
+        return reply.status(502).send({ error: "generation_failed" });
+      }
     }
   );
 

@@ -36,6 +36,14 @@ const schema = z.object({
   // Results
   RESULTS_RETENTION_DAYS: z.coerce.number().int().min(0).default(90),
 
+  // LLM generation — NVIDIA's OpenAI-compatible endpoint (verified working
+  // against nvidia/nemotron-3-ultra-550b-a55b, 2026-08-29:
+  // ~/devops/scratchpad/2026-08-29_scripturejam-nvidia-generation-test.py)
+  NVIDIA_API_KEY: z.string().min(1).optional(),
+  NVIDIA_BASE_URL: z.string().url().default("https://integrate.api.nvidia.com/v1"),
+  NVIDIA_MODEL: z.string().default("nvidia/nemotron-3-ultra-550b-a55b"),
+  MAX_GENERATE_QUESTIONS: z.coerce.number().int().positive().default(20),
+
   // Observability
   ENABLE_METRICS: z
     .enum(["true", "false"])

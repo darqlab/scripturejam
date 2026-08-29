@@ -1,6 +1,8 @@
 // Shared types consumed by both server and web packages.
 // Mirrors the event contract defined in planning/03-architecture.md.
 
+export { BIBLE_BOOKS } from "./books.js";
+
 // ── Domain primitives ───────────────────────────────────────────────────────
 
 export type Translation = "KJV" | "WEB" | "ASV";

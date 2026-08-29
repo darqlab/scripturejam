@@ -2,13 +2,14 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { storageSet } from "$lib/storage.js";
-  import type {
-    Translation,
-    SessionMode,
-    SessionScope,
-    Question,
-    QuestionPack,
-    Difficulty,
+  import {
+    BIBLE_BOOKS,
+    type Translation,
+    type SessionMode,
+    type SessionScope,
+    type Question,
+    type QuestionPack,
+    type Difficulty,
   } from "@scripturejam/types";
 
   interface PackSummary {
@@ -34,7 +35,7 @@
 
   let translation = $state<Translation>("WEB");
   let mode = $state<SessionMode>("individual");
-  let scopeTab = $state<"pack" | "filter" | "custom">("pack");
+  let scopeTab = $state<"pack" | "filter" | "custom" | "generate">("pack");
   let creating = $state(false);
   let createError = $state<string | null>(null);
 
@@ -47,6 +48,13 @@
   let customDescription = $state("");
   let customAgeBand = $state<"youth" | "all-ages">("all-ages");
   let customQuestions = $state<DraftQuestion[]>([]);
+
+  // Generate-from-a-book state
+  let generateBook = $state("");
+  let generateCount = $state(10);
+  let generateAgeBand = $state<"youth" | "all-ages">("all-ages");
+  let generating = $state(false);
+  let generateError = $state<string | null>(null);
 
   // Question editor state
   let showQEditor = $state(false);
@@ -89,6 +97,11 @@
       if (books.length === 0) return null;
       return { type: "filter" as const, filter: { books } };
     }
+    if (scopeTab === "generate") {
+      // No real scope exists yet — the pack is generated live inside
+      // createSession(). canCreate below gates on generateBook instead.
+      return null;
+    }
     // custom tab
     if (customTitle.trim() === "" || customQuestions.length === 0) return null;
     return {
@@ -103,7 +116,9 @@
     };
   });
 
-  let canCreate = $derived(!creating && scope !== null);
+  let canCreate = $derived(
+    !creating && (scopeTab === "generate" ? generateBook !== "" : scope !== null)
+  );
 
   function resetDraftForm() {
     draftPrompt = "";
@@ -265,10 +280,21 @@
     hard: "bg-red-100 text-red-700",
   };
 
+  const GENERATE_ERROR_MESSAGES: Record<string, string> = {
+    generation_not_configured: "AI question generation isn't configured on this server",
+    generation_failed: "Couldn't generate questions for that book — try again or pick another book",
+    unknown_book: "Unrecognized book name",
+  };
+
   async function createSession() {
-    if (!scope) return;
+    if (scopeTab === "generate") {
+      if (generateBook === "") return;
+    } else if (!scope) {
+      return;
+    }
     creating = true;
     createError = null;
+    generateError = null;
 
     try {
       const res = await fetch("/api/sessions", {
@@ -292,7 +318,51 @@
       const data = (await res.json()) as { code: string; hostToken: string };
       const { code, hostToken } = data;
 
-      if (scopeTab === "custom") {
+      if (scopeTab === "generate") {
+        generating = true;
+        const genRes = await fetch(`/api/sessions/${code}/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            hostToken,
+            book: generateBook,
+            count: generateCount,
+            ageBand: generateAgeBand,
+          }),
+        });
+        if (!genRes.ok) {
+          const body = (await genRes.json().catch(() => ({}))) as { error?: string };
+          generateError =
+            (body.error && GENERATE_ERROR_MESSAGES[body.error]) ??
+            "Couldn't generate questions for that book — try again or pick another book";
+          generating = false;
+          creating = false;
+          return;
+        }
+        const { pack, questions } = (await genRes.json()) as {
+          pack: QuestionPack;
+          questions: Question[];
+        };
+        generating = false;
+
+        const packRes = await fetch(`/api/sessions/${code}/pack`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hostToken, pack, questions }),
+        });
+        if (!packRes.ok) {
+          const body = (await packRes.json().catch(() => ({}))) as { error?: string };
+          generateError = body.error ?? "Failed to attach generated pack";
+          creating = false;
+          return;
+        }
+
+        const realScope: SessionScope = { type: "custom", customPack: pack };
+        storageSet(`sj_host_token_${code}`, hostToken);
+        storageSet(`sj_host_scope_${code}`, JSON.stringify({ scope: realScope, translation, mode }));
+        await goto(`/host/${code}`);
+        return;
+      } else if (scopeTab === "custom") {
         const packId = `custom-${code}`;
         const pack: QuestionPack = {
           id: packId,
@@ -349,6 +419,7 @@
       const msg = err instanceof Error ? err.message : String(err);
       createError = msg.includes("fetch") ? "Network error — please try again" : `Error: ${msg}`;
       creating = false;
+      generating = false;
     }
   }
 </script>
@@ -411,7 +482,7 @@
 
     <div class="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
       <div class="flex border-b border-gray-200">
-        {#each [["pack", "Curated pack"], ["filter", "Custom filter"], ["custom", "Author your own"]] as [tab, label]}
+        {#each [["pack", "Curated pack"], ["filter", "Custom filter"], ["custom", "Author your own"], ["generate", "Generate from a book"]] as [tab, label]}
           <button
             type="button"
             class="flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors min-h-[44px] {scopeTab === tab ? 'border-blue-600 text-blue-700 bg-blue-50' : 'border-transparent text-gray-600 hover:bg-gray-50'}"
@@ -471,6 +542,64 @@
               <div class="text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-2">
                 Books: {filterBooks.split(",").map((b) => b.trim()).filter(Boolean).join(", ")}
               </div>
+            {/if}
+          </div>
+        {:else if scopeTab === "generate"}
+          <!-- Generate from a book tab -->
+          <div class="space-y-3">
+            <div>
+              <label for="generate-book" class="block text-sm font-medium text-gray-700 mb-1">
+                Bible book
+              </label>
+              <select
+                id="generate-book"
+                bind:value={generateBook}
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] text-sm bg-white"
+              >
+                <option value="" disabled selected>Choose a book…</option>
+                {#each BIBLE_BOOKS as book}
+                  <option value={book}>{book}</option>
+                {/each}
+              </select>
+            </div>
+            <div>
+              <label for="generate-count" class="block text-sm font-medium text-gray-700 mb-1">
+                Number of questions
+              </label>
+              <input
+                id="generate-count"
+                type="number"
+                min="5"
+                max="30"
+                bind:value={generateCount}
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] text-sm"
+              />
+            </div>
+            <fieldset>
+              <legend class="text-xs font-medium text-gray-600 mb-1">Age band</legend>
+              <div class="flex gap-4">
+                {#each [["all-ages", "All ages"], ["youth", "Youth"]] as [val, lbl]}
+                  <label class="flex items-center gap-2 cursor-pointer min-h-[36px]">
+                    <input
+                      type="radio"
+                      bind:group={generateAgeBand}
+                      value={val}
+                      class="w-4 h-4 accent-blue-600"
+                    />
+                    <span class="text-sm">{lbl}</span>
+                  </label>
+                {/each}
+              </div>
+            </fieldset>
+            <p class="text-xs text-gray-400">
+              Questions are generated live by AI when you click "Create session" below —
+              this can take a few seconds.
+            </p>
+            {#if generateError}
+              <p class="text-red-600 text-xs font-medium" role="alert">{generateError}</p>
+            {/if}
+            {#if generating}
+              <p class="text-xs text-blue-600 font-medium">Generating questions…</p>
             {/if}
           </div>
         {:else}

@@ -135,9 +135,12 @@ export async function generateQuestionsForBook(
       top_p: 0.95,
       max_tokens: 4096,
       // Match the working reference script — thinking/reasoning tokens off,
-      // we only want the final YAML in `content`.
-      // @ts-expect-error extra_body isn't in the OpenAI SDK's public types but NVIDIA's endpoint accepts it
-      extra_body: { chat_template_kwargs: { enable_thinking: false } },
+      // we only want the final YAML in `content`. NVIDIA's endpoint expects
+      // `chat_template_kwargs` as a top-level body field, not wrapped in
+      // `extra_body` (that wrapper is a Python-SDK-only convenience; the
+      // Node SDK serializes whatever top-level keys you pass directly).
+      // @ts-expect-error chat_template_kwargs isn't in the OpenAI SDK's public types but NVIDIA's endpoint accepts it
+      chat_template_kwargs: { enable_thinking: false },
     });
     responseText = response.choices[0]?.message?.content ?? "";
     if (!responseText) {

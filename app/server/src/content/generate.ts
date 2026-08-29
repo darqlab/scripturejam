@@ -195,7 +195,21 @@ export async function generateQuestionsForBook(
   try {
     parsedYaml = yaml.load(responseText);
   } catch (err) {
-    throw new GenerationFailedError("Model did not return valid YAML", err);
+    // Known model failure mode: an occasional `key:value` line with no space
+    // after the colon (e.g. `text:Perish`), which is invalid YAML and would
+    // otherwise fail the entire batch over one malformed question. Insert
+    // the missing space on plain `text:`/`prompt:`/`id:` scalar lines only —
+    // narrow enough not to touch `references:`/nested block structure — and
+    // retry once before giving up.
+    const repaired = responseText.replace(
+      /^(\s*(?:-\s*)?(?:id|text|prompt|book|difficulty|correctOptionId)):(\S)/gm,
+      "$1: $2"
+    );
+    try {
+      parsedYaml = yaml.load(repaired);
+    } catch {
+      throw new GenerationFailedError("Model did not return valid YAML", err);
+    }
   }
 
   const shapeParsed = generationResponseSchema.safeParse(parsedYaml);

@@ -115,20 +115,22 @@ export async function revealQuestion(code: string): Promise<void> {
     .sort((a, b) => b.score - a.score)
     .map((p, i) => ({ ...p, rank: i + 1 }));
 
-  // Resolve verse text for first reference
-  let verseText = "";
-  const ref = question.references[0];
-  if (ref) {
-    const bibleIndex = bible.get(session.translation);
-    const chap = bibleIndex?.[ref.book]?.[ref.chapter];
-    if (chap) {
-      const parts: string[] = [];
-      for (let v = ref.verse_start; v <= (ref.verse_end ?? ref.verse_start); v++) {
-        if (chap[v]) parts.push(chap[v]);
-      }
-      verseText = parts.join(" ");
+  // Resolve full verse text for every cited reference (not just the first),
+  // with verse numbers inline, so the host can display the complete passage.
+  const bibleIndex = bible.get(session.translation);
+  const referenceTexts: string[] = [];
+  for (const r of question.references) {
+    const chap = bibleIndex?.[r.book]?.[r.chapter];
+    if (!chap) continue;
+    const parts: string[] = [];
+    for (let v = r.verse_start; v <= (r.verse_end ?? r.verse_start); v++) {
+      if (chap[v]) parts.push(`${v} ${chap[v]}`);
     }
+    if (parts.length === 0) continue;
+    const citation = `${r.book} ${r.chapter}:${r.verse_start}${r.verse_end && r.verse_end !== r.verse_start ? "–" + r.verse_end : ""}`;
+    referenceTexts.push(question.references.length > 1 ? `${citation}\n${parts.join(" ")}` : parts.join(" "));
   }
+  const verseText = referenceTexts.join("\n\n");
 
   const io = getIo();
   const answeredCount = Object.values(session.players).filter((p) => p.answers[questionId]).length;

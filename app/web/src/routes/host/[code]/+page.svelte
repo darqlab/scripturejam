@@ -430,7 +430,7 @@
               {#if r.verseText}— {r.translation}{/if}
             </p>
             {#if r.verseText}
-              <p class="text-base leading-relaxed italic">{r.verseText}</p>
+              <p class="text-base leading-relaxed italic whitespace-pre-line">{r.verseText}</p>
             {/if}
           </div>
         </div>

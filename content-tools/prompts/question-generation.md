@@ -1,7 +1,7 @@
 # Prompt — Question generation
 
 **Feeds:** task 1.8 (Question generation script)
-**Output:** staging YAML matching the `Question` schema in `planning/03-architecture.md` §Data Model
+**Output:** JSON matching the `Question` schema in `planning/03-architecture.md` §Data Model
 **Run mode:** batched per pack theme; one API call yields N candidate questions
 
 ---
@@ -48,8 +48,11 @@ Hard rules:
    where verse_end is optional and equals verse_start for single-verse refs.
    Book names use the KJV canonical English form (e.g., "1 Kings" not "I Kgs").
 
-Output a single YAML document with a top-level `questions:` list. No prose
-before or after. No markdown code fences around the YAML.
+Output a single JSON object with a top-level "questions" array. No prose
+before or after. No markdown code fences around the JSON. All strings must be
+valid JSON strings (proper escaping) — this matters because many prompts and
+answers legitimately contain a colon (e.g. "Psalm 2:7"), which is exactly the
+kind of text that breaks less strict formats, so stick to well-formed JSON.
 ```
 
 ---
@@ -76,26 +79,31 @@ Difficulty definitions:
 Avoid duplicating these prompts already generated for this pack:
 {{already_generated_prompts}}
 
-Output schema (YAML):
+Output schema (JSON):
 
-questions:
-  - id: <kebab-case slug, unique within this pack>
-    prompt: <the question text — one sentence, ends with "?">
-    options:
-      - id: a
-        text: <option text>
-      - id: b
-        text: <option text>
-      # 2–4 options total
-    correctOptionId: <one of a/b/c/d>
-    references:
-      - book: <KJV canonical book name>
-        chapter: <int>
-        verse_start: <int>
-        verse_end: <int, optional, omit if single verse>
-    difficulty: easy | medium | hard
-    themes:
-      - <one or more tags: parable, prophecy, miracle, narrative, etc.>
+{
+  "questions": [
+    {
+      "id": "<kebab-case slug, unique within this pack>",
+      "prompt": "<the question text — one sentence, ends with \"?\">",
+      "options": [
+        { "id": "a", "text": "<option text>" },
+        { "id": "b", "text": "<option text>" }
+      ],
+      "correctOptionId": "<one of a/b/c/d>",
+      "references": [
+        {
+          "book": "<KJV canonical book name>",
+          "chapter": <int>,
+          "verse_start": <int>,
+          "verse_end": <int, optional, omit if single verse>
+        }
+      ],
+      "difficulty": "easy | medium | hard",
+      "themes": ["<one or more tags: parable, prophecy, miracle, narrative, etc.>"]
+    }
+  ]
+}
 
 Self-check before responding:
 - Each question has exactly one correctOptionId.
@@ -113,6 +121,15 @@ Self-check before responding:
 - **"Trick" questions.** The "distractors from within scripture" rule catches most. The review checklist (`review-checklist.md`) has a dedicated "is this a trick question?" gate.
 - **Doctrinal drift.** Spotted in review; the hard-rule list above is the first line of defense.
 - **Off-scope refs.** The self-check step is the model's first chance to catch it; the generator script also schema-validates and rejects any reference outside `{{scope_books_chapters}}`.
+- **Unquoted colons broke YAML (fixed 2026-08-29 by switching to JSON).** The
+  original YAML output format failed live, repeatedly, on real generation
+  calls — the model routinely writes prompts like `Psalm 2:7 records the
+  decree...` without quoting the string, and a bare colon inside an unquoted
+  YAML scalar is a parse error, which killed the entire batch. A narrow
+  regex repair for one variant (`text:Perish`, no space after the colon)
+  masked one symptom but not the underlying class. JSON output (with
+  `response_format: json_object` on NVIDIA's endpoint) has no equivalent
+  trap — colons inside a JSON string are just characters.
 - **Duplicate prompts across pack runs.** `{{already_generated_prompts}}` is rebuilt from the staging file before each call; for long-running pack generation, this list grows — eventually move dedup to embedding-based similarity if exact-match dedup stops being enough.
 
 ## Prompt-caching strategy

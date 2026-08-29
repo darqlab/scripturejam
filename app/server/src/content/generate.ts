@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-import yaml from "js-yaml";
 import { z } from "zod";
 import type { Question, QuestionPack } from "@scripturejam/types";
 import { config } from "../config.js";
@@ -41,8 +40,11 @@ Hard rules:
    where verse_end is optional and equals verse_start for single-verse refs.
    Book names use the KJV canonical English form (e.g., "1 Kings" not "I Kgs").
 
-Output a single YAML document with a top-level \`questions:\` list. No prose
-before or after. No markdown code fences around the YAML.`;
+Output a single JSON object with a top-level "questions" array. No prose
+before or after. No markdown code fences around the JSON. All strings must be
+valid JSON strings (proper escaping) — this matters because many prompts and
+answers legitimately contain a colon (e.g. "Psalm 2:7"), which is exactly the
+kind of text that breaks less strict formats, so stick to well-formed JSON.`;
 
 export interface ChapterRange {
   start: number;
@@ -96,26 +98,35 @@ Difficulty definitions:
 Avoid duplicating these prompts already generated for this pack:
 (none — first batch)
 
-Output schema (YAML):
+Output schema (JSON):
 
-questions:
-  - id: <kebab-case slug, unique within this pack>
-    prompt: <the question text — one sentence, ends with "?">
-    options:
-      - id: a
-        text: <option text>
-      - id: b
-        text: <option text>
-      # 2–4 options total
-    correctOptionId: <one of a/b/c/d>
-    references:
-      - book: <KJV canonical book name>
-        chapter: <int>
-        verse_start: <int>
-        verse_end: <int, optional, omit if single verse>
-    difficulty: easy | medium | hard
-    themes:
-      - <one or more tags: parable, prophecy, miracle, narrative, etc.>
+{
+  "questions": [
+    {
+      "id": "<kebab-case slug, unique within this pack>",
+      "prompt": "<the question text — one sentence, ends with \"?\">",
+      "options": [
+        { "id": "a", "text": "<option text>" },
+        { "id": "b", "text": "<option text>" }
+        // 2–4 options total
+      ],
+      "correctOptionId": "<one of a/b/c/d>",
+      "references": [
+        {
+          "book": "<KJV canonical book name>",
+          "chapter": <int>,
+          "verse_start": <int>,
+          "verse_end": <int, optional, omit if single verse>
+        }
+      ],
+      "difficulty": "easy | medium | hard",
+      "themes": ["<one or more tags: parable, prophecy, miracle, narrative, etc.>"]
+    }
+  ]
+}
+
+(The // comment above is illustrative only — do not include comments in the
+actual JSON output; JSON does not support them.)
 
 Self-check before responding:
 - Each question has exactly one correctOptionId.
@@ -170,8 +181,14 @@ export async function generateQuestionsForBook(
       temperature: 0.7,
       top_p: 0.95,
       max_tokens: 4096,
+      // json_object mode: the endpoint enforces syntactically valid JSON,
+      // which is what actually fixed the recurring generation failures —
+      // unquoted YAML scalars containing a bare colon (e.g. "Psalm 2:7...",
+      // extremely common in this app's prompts) kept breaking the YAML
+      // parser no matter how the prompt was worded; JSON has no such trap.
+      response_format: { type: "json_object" },
       // Match the working reference script — thinking/reasoning tokens off,
-      // we only want the final YAML in `content`. NVIDIA's endpoint expects
+      // we only want the final JSON in `content`. NVIDIA's endpoint expects
       // `chat_template_kwargs` as a top-level body field, not wrapped in
       // `extra_body` (that wrapper is a Python-SDK-only convenience; the
       // Node SDK serializes whatever top-level keys you pass directly).
@@ -191,30 +208,27 @@ export async function generateQuestionsForBook(
     throw new GenerationFailedError("NVIDIA API call failed", err);
   }
 
-  let parsedYaml: unknown;
+  let parsedJson: unknown;
   try {
-    parsedYaml = yaml.load(responseText);
+    parsedJson = JSON.parse(responseText);
   } catch (err) {
-    // Known model failure mode: an occasional `key:value` line with no space
-    // after the colon (e.g. `text:Perish`), which is invalid YAML and would
-    // otherwise fail the entire batch over one malformed question. Insert
-    // the missing space on plain `text:`/`prompt:`/`id:` scalar lines only —
-    // narrow enough not to touch `references:`/nested block structure — and
-    // retry once before giving up.
-    const repaired = responseText.replace(
-      /^(\s*(?:-\s*)?(?:id|text|prompt|book|difficulty|correctOptionId)):(\S)/gm,
-      "$1: $2"
-    );
+    // Even under json_object mode, models occasionally wrap the JSON in
+    // markdown fences or leave stray prose around it — strip a fenced block
+    // if present and retry once before giving up.
+    const fenced = responseText.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (!fenced) {
+      throw new GenerationFailedError("Model did not return valid JSON", err);
+    }
     try {
-      parsedYaml = yaml.load(repaired);
+      parsedJson = JSON.parse(fenced[1]);
     } catch {
-      throw new GenerationFailedError("Model did not return valid YAML", err);
+      throw new GenerationFailedError("Model did not return valid JSON", err);
     }
   }
 
-  const shapeParsed = generationResponseSchema.safeParse(parsedYaml);
+  const shapeParsed = generationResponseSchema.safeParse(parsedJson);
   if (!shapeParsed.success) {
-    throw new GenerationFailedError("Model YAML did not match the expected { questions: [...] } shape");
+    throw new GenerationFailedError("Model JSON did not match the expected { questions: [...] } shape");
   }
 
   const candidateQuestions: Question[] = [];

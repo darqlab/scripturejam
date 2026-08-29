@@ -17,7 +17,7 @@ const app = Fastify({ logger: false });
 
 const CSP_POLICY = [
   "default-src 'none'",
-  "script-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "connect-src 'self' ws: wss:",

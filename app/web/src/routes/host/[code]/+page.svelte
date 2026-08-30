@@ -275,9 +275,9 @@
   {#if $hostStore.state === null || $hostStore.state === "lobby"}
     <div class="grid grid-cols-[1fr_400px] grid-rows-[112px_1fr_92px] min-h-[calc(100vh-142px)]">
       <!-- Left column: Header + Main -->
-      <div class="col-span-1 row-span-2 flex flex-col">
+      <div class="col-span-1 row-span-2 flex flex-col min-h-0">
         <!-- Header row -->
-        <div class="flex items-center justify-between px-[56px] py-4">
+        <div class="flex items-center justify-between px-[56px] py-4 flex-shrink-0">
           <p class="text-[31px] font-semibold uppercase tracking-[.1em] text-ink-38">Waiting to begin</p>
           <div class="flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1 rounded-full border border-rule text-navy">
@@ -290,14 +290,14 @@
         </div>
 
         <!-- Main content -->
-        <div class="flex-1 flex items-center justify-center px-[56px] gap-[76px]">
-          <div class="text-center">
+        <div class="flex-1 flex items-center justify-center px-[56px] gap-[76px] min-h-0 overflow-hidden">
+          <div class="text-center flex flex-col items-center justify-center min-h-0">
             <img
               src="/api/sessions/{code}/qr.svg"
               alt="QR code to join session {code}"
-              class="w-[660px] h-[660px] rounded-[14px] border border-rule bg-paper-2 p-2"
+              class="max-w-[660px] max-h-[660px] w-[80vh] h-[80vh] rounded-[14px] border border-rule bg-paper-2 p-2 flex-shrink-0"
             />
-            <div class="mt-6">
+            <div class="mt-4 flex-shrink-0">
               <p class="text-[26px] text-ink-60 leading-relaxed">scan, or go to / quiz.local and enter</p>
               <p class="text-[172px] font-medium tracking-[.14em] leading-tight mt-2" style="font-weight: 500;">{code}</p>
             </div>
@@ -364,9 +364,9 @@
     {@const q = $hostStore.currentQuestion}
     <div class="grid grid-cols-[1fr_400px] grid-rows-[112px_1fr_92px] min-h-[calc(100vh-142px)]">
       <!-- Left column: Header + Main -->
-      <div class="col-span-1 row-span-2 flex flex-col">
+      <div class="col-span-1 row-span-2 flex flex-col min-h-0">
         <!-- Header row -->
-        <div class="flex items-center justify-between px-[56px] py-4">
+        <div class="flex items-center justify-between px-[56px] py-4 flex-shrink-0">
           <p class="text-[31px] font-semibold uppercase tracking-[.1em] text-ink-38">Question {q.index + 1} of {q.total}</p>
           <div class="flex items-center justify-center w-[88px] h-[88px] relative" style="background: conic-gradient(var(--navy) 0 {timerProgress}%, rgba(30,58,95,.15) {timerProgress}% 100%); border-radius: 50%;">
             <div class="absolute inset-[9px] rounded-full bg-paper flex items-center justify-center">
@@ -376,7 +376,7 @@
         </div>
 
         <!-- Main content -->
-        <div class="flex-1 flex flex-col items-center justify-center px-[56px] gap-[36px]">
+        <div class="flex-1 flex flex-col items-center justify-center px-[56px] gap-[36px] min-h-0 overflow-hidden">
           <h2 class="text-[60px] font-semibold leading-[1.16] tracking-[-.01em] max-w-[1250px] text-wrap-pretty text-center">{q.prompt}</h2>
 
           <div class="grid grid-cols-2 gap-[22px] w-full max-w-[1250px]">
@@ -457,9 +457,9 @@
     {@const q = $hostStore.currentQuestion}
     <div class="grid grid-cols-[1fr_400px] grid-rows-[112px_1fr_92px] min-h-[calc(100vh-142px)]">
       <!-- Left column: Header + Main -->
-      <div class="col-span-1 row-span-2 flex flex-col">
+      <div class="col-span-1 row-span-2 flex flex-col min-h-0">
         <!-- Header row -->
-        <div class="flex items-center justify-between px-[56px] py-4">
+        <div class="flex items-center justify-between px-[56px] py-4 flex-shrink-0">
           <p class="text-[31px] font-semibold uppercase tracking-[.1em] text-ink-38">Question {q.index + 1} of {q.total}</p>
           <span class="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1 rounded-full border border-[rgba(63,98,18,.4)] text-vine">
             {r.answeredCount} correct · {r.playerCount - r.answeredCount} missed
@@ -467,10 +467,10 @@
         </div>
 
         <!-- Main content -->
-        <div class="flex-1 flex flex-col lg:flex-row gap-6 p-[56px]">
-          <div class="flex-1 space-y-4">
+        <div class="flex-1 flex flex-col lg:flex-row gap-6 p-[56px] min-h-0 overflow-hidden">
+          <div class="flex-1 space-y-4 overflow-y-auto">
             <!-- Answer grid - fixed 300px row height -->
-            <div class="grid grid-cols-2 gap-3 h-[300px]">
+            <div class="grid grid-cols-2 gap-3 h-[300px] flex-shrink-0">
               {#each q.options as option, i}
                 {@const isCorrect = option.id === r.correctOptionId}
                 <div
@@ -489,7 +489,7 @@
             </div>
 
             <!-- Verse block -->
-            <div class="bg-navy-8 border-t-[2px] border-navy border-b border-[rgba(30,58,95,.2)] rounded-none mx-[-56px] px-[56px] py-[34px_44px]" style="max-width: 1220px;">
+            <div class="bg-navy-8 border-t-[2px] border-navy border-b border-[rgba(30,58,95,.2)] rounded-none mx-[-56px] px-[56px] py-[34px_44px] max-h-[50vh] overflow-y-auto" style="max-width: 1220px;">
               <p class="text-[26px] font-semibold uppercase tracking-[.18em] text-navy mb-2">
                 {r.references.map((ref) => `${ref.book} ${ref.chapter}:${ref.verse_start}${ref.verse_end && ref.verse_end !== ref.verse_start ? '–' + ref.verse_end : ''}`).join("; ")} · {r.translation}
               </p>

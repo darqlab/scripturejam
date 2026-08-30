@@ -173,57 +173,64 @@
     onBack={() => (showAvatarPicker = false)}
   />
 {:else}
-  <main class="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
-    <div class="w-full max-w-sm bg-white rounded-2xl shadow-md p-6 space-y-5">
-      <h1 class="text-2xl font-bold text-center text-blue-700">scripturejam</h1>
+  <main class="min-h-screen flex flex-col items-center justify-center p-4 bg-paper">
+    <div class="w-full max-w-sm bg-paper-2 rounded-[34px] border border-rule p-[34px_24px] space-y-5">
+      <!-- Top bar -->
+      <div class="flex items-center justify-between h-[54px] border-b border-rule pb-2">
+        <span class="text-[19px] text-ink-38">quiz.local</span>
+        <span class="text-[19px] font-mono text-ink-38 tracking-widest">{code}</span>
+      </div>
 
-      <form onsubmit={handleJoin} class="space-y-4">
+      <form onsubmit={handleJoin} class="space-y-5">
+        <!-- Avatar -->
+        <div class="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onclick={() => (showAvatarPicker = true)}
+            class="relative"
+            aria-label="Choose avatar"
+          >
+            {#if avatarId}
+              <img
+                src="/api/avatars/{avatarId}/monogram.svg?name={encodeURIComponent(avatarDisplayName || avatarId)}"
+                alt=""
+                class="w-[104px] h-[104px] rounded-full border border-[rgba(30,58,95,.2)] bg-navy-8"
+              />
+            {:else}
+              <div class="w-[104px] h-[104px] rounded-full bg-navy-8 border border-[rgba(30,58,95,.2)]"></div>
+            {/if}
+          </button>
+          <p class="text-[19px] text-ink-60">tap to change</p>
+        </div>
+
+        <!-- Session code -->
         <div>
-          <label for="code" class="block text-sm font-medium text-gray-700 mb-1">Session code</label>
           <input
             id="code"
             type="text"
             value={code}
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg tracking-widest font-mono uppercase text-center"
+            class="w-full h-[58px] border border-rule rounded-[10px] px-3 py-2 text-[28px] font-mono tracking-[.3em] uppercase text-center bg-paper-2 text-ink"
             maxlength="6"
             readonly={!!$page.params.code}
+            aria-label="Session code"
           />
         </div>
 
+        <!-- Your name / Team name -->
         <div>
-          <label for="nickname" class="block text-sm font-medium text-gray-700 mb-1">{mode === "group" ? "Team name" : "Your name"}</label>
+          <label for="nickname" class="block text-[21px] font-semibold uppercase tracking-[.16em] text-ink-38 mb-1">
+            {mode === "group" ? "Team name" : "Your name"}
+          </label>
           <input
             id="nickname"
             type="text"
             bind:value={nickname}
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-base min-h-[44px]"
+            class="w-full h-[58px] border border-rule rounded-[10px] px-3 py-2 text-[24px] min-h-[58px] bg-paper-2 text-ink caret-navy"
             maxlength="24"
             placeholder={mode === "group" ? "Enter team name" : "Enter your name"}
             required
             autocomplete="off"
           />
-        </div>
-
-        <div>
-          <label for="avatar-btn" class="block text-sm font-medium text-gray-700 mb-1">Avatar</label>
-          <button
-            id="avatar-btn"
-            type="button"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] text-left flex items-center gap-3 bg-white hover:bg-gray-50 transition-colors"
-            onclick={() => (showAvatarPicker = true)}
-          >
-            {#if avatarId}
-              <img
-                src="/api/avatars/{avatarId}/monogram.svg?name={encodeURIComponent(avatarDisplayName || avatarId)}"
-                alt={avatarDisplayName || avatarId}
-                class="w-9 h-9 rounded-full flex-shrink-0"
-              />
-              <span class="font-medium">{avatarDisplayName || avatarId}</span>
-            {:else}
-              <span class="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0 inline-block"></span>
-              <span class="text-gray-400">Tap to choose…</span>
-            {/if}
-          </button>
         </div>
 
         {#if error}
@@ -232,32 +239,33 @@
 
         <button
           type="submit"
-          class="w-full bg-blue-600 text-white rounded-lg px-4 py-3 font-semibold text-base min-h-[44px] disabled:opacity-50 hover:bg-blue-700 transition-colors"
+          class="w-full bg-navy text-paper rounded-[10px] px-4 py-3 font-semibold text-[25px] min-h-[58px] disabled:opacity-50 hover:bg-navy/90 transition-colors"
           disabled={!nickname.trim() || !avatarId || joining}
         >
           {joining ? "Joining…" : "Join quiz →"}
         </button>
       </form>
 
-      <div class="border-t pt-4 space-y-2">
-        <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Accessibility</p>
+      <!-- Accessibility block -->
+      <div class="border-t border-rule pt-4 space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-[.16em] text-ink-38">accessibility</p>
         <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
           <input
             type="checkbox"
             checked={largeText}
             onchange={toggleLargeText}
-            class="w-5 h-5 rounded"
+            class="w-5 h-5 rounded border-rule text-navy focus:ring-navy"
           />
-          <span class="text-sm">Large text</span>
+          <span class="text-sm text-ink">Large text</span>
         </label>
         <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
           <input
             type="checkbox"
             checked={highContrast}
             onchange={toggleHighContrast}
-            class="w-5 h-5 rounded"
+            class="w-5 h-5 rounded border-rule text-navy focus:ring-navy"
           />
-          <span class="text-sm">High contrast</span>
+          <span class="text-sm text-ink">High contrast</span>
         </label>
       </div>
     </div>

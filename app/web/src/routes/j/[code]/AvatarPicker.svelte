@@ -76,22 +76,22 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-50 flex flex-col">
-  <header class="bg-white border-b px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
+<div class="min-h-screen bg-paper flex flex-col">
+  <header class="bg-paper-2 border-b border-rule px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
     <button
       type="button"
       onclick={onBack}
-      class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors text-gray-700 font-medium"
+      class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-[6px] hover:bg-[rgba(35,32,27,.05)] transition-colors text-ink font-medium"
       aria-label="Back"
     >
       ← Back
     </button>
-    <h2 class="text-lg font-semibold flex-1">Choose your avatar</h2>
+    <h2 class="text-lg font-semibold flex-1 text-center text-ink">Choose your avatar</h2>
     {#if !fallbackMode && filtered.length > 0}
       <button
         type="button"
         onclick={surpriseMe}
-        class="min-h-[44px] px-3 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+        class="min-h-[44px] px-3 bg-navy text-paper rounded-[6px] text-sm font-medium hover:bg-navy/90 transition-colors"
       >
         Surprise me
       </button>
@@ -100,16 +100,16 @@
 
   {#if loading}
     <div class="flex-1 flex items-center justify-center">
-      <p class="text-gray-400 animate-pulse">Loading avatars…</p>
+      <p class="text-ink-60 animate-pulse">Loading avatars…</p>
     </div>
   {:else if fallbackMode}
     <div class="flex-1 flex flex-col items-center justify-center p-6 gap-4">
-      <p class="text-gray-600 text-center">Type any name to use as your avatar</p>
+      <p class="text-ink-60 text-center">Type any name to use as your avatar</p>
       <input
         type="text"
         bind:value={fallbackText}
         placeholder="Avatar name…"
-        class="w-full max-w-sm border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] text-base"
+        class="w-full max-w-sm border border-rule rounded-[6px] px-3 py-2 min-h-[44px] text-base bg-paper-2 text-ink"
         maxlength="32"
         autocomplete="off"
       />
@@ -120,25 +120,25 @@
             alt={fallbackText.trim()}
             class="w-16 h-16 rounded-full"
           />
-          <span class="text-sm text-gray-600">{fallbackText.trim()}</span>
+          <span class="text-sm text-ink-60">{fallbackText.trim()}</span>
         </div>
       {/if}
       <button
         type="button"
         onclick={() => onSelect(fallbackText.trim())}
         disabled={!fallbackText.trim()}
-        class="w-full max-w-sm bg-blue-600 text-white rounded-lg px-4 py-3 min-h-[44px] font-semibold disabled:opacity-50 hover:bg-blue-700 transition-colors"
+        class="w-full max-w-sm bg-navy text-paper rounded-[6px] px-4 py-3 min-h-[44px] font-semibold disabled:opacity-50 hover:bg-navy/90 transition-colors"
       >
         Use this name
       </button>
     </div>
   {:else}
-    <div class="p-4 space-y-3 bg-white border-b">
+    <div class="p-4 space-y-3 bg-paper-2 border-b border-rule">
       <input
         type="search"
         bind:value={search}
         placeholder="Search avatars…"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] text-base"
+        class="w-full border border-rule rounded-[6px] px-3 py-2 min-h-[44px] text-base bg-paper-2 text-ink"
         autocomplete="off"
       />
       <div class="flex gap-2 flex-wrap">
@@ -147,7 +147,7 @@
             <button
               type="button"
               onclick={() => (categoryFilter = cat.value)}
-              class="px-3 py-1 rounded-full text-sm font-medium min-h-[36px] border transition-colors {categoryFilter === cat.value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}"
+              class="px-3 py-1 rounded-full text-sm font-medium min-h-[36px] border border-rule transition-colors {categoryFilter === cat.value ? 'bg-navy text-paper border-navy' : 'bg-paper-2 text-ink hover:bg-[rgba(35,32,27,.05)]'}"
             >
               {cat.label}
             </button>
@@ -159,7 +159,7 @@
           <button
             type="button"
             onclick={() => (testamentFilter = t.value)}
-            class="px-3 py-1 rounded-full text-sm font-medium min-h-[36px] border transition-colors {testamentFilter === t.value ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}"
+            class="px-3 py-1 rounded-full text-sm font-medium min-h-[36px] border border-rule transition-colors {testamentFilter === t.value ? 'bg-vine text-paper border-vine' : 'bg-paper-2 text-ink hover:bg-[rgba(35,32,27,.05)]'}"
           >
             {t.label}
           </button>
@@ -169,7 +169,7 @@
 
     {#if filtered.length === 0}
       <div class="flex-1 flex items-center justify-center p-6">
-        <p class="text-gray-400">No avatars match your filters</p>
+        <p class="text-ink-60">No avatars match your filters</p>
       </div>
     {:else}
       <div class="grid grid-cols-2 gap-3 p-4 overflow-y-auto">
@@ -177,16 +177,16 @@
           <button
             type="button"
             onclick={() => onSelect(avatar.id)}
-            class="flex flex-col items-center gap-2 p-3 bg-white rounded-xl border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors min-h-[100px] active:scale-95"
+            class="flex flex-col items-center gap-2 p-3 bg-paper-2 rounded-[12px] border border-rule hover:border-navy hover:bg-[rgba(35,32,27,.05)] transition-colors min-h-[100px] active:scale-[.98]"
           >
             <img
               src="/api/avatars/{avatar.id}/monogram.svg?name={encodeURIComponent(avatar.displayName)}"
               alt={avatar.displayName}
-              class="w-12 h-12 rounded-full flex-shrink-0"
+              class="w-[52px] h-[52px] rounded-full flex-shrink-0 border border-[rgba(30,58,95,.2)] bg-navy-8"
             />
-            <span class="text-sm font-medium text-center leading-tight">{avatar.displayName}</span>
+            <span class="text-[19px] font-medium text-center leading-[1.2] text-ink">{avatar.displayName}</span>
             {#if avatar.disambiguation}
-              <span class="text-xs text-gray-400 text-center leading-tight">{avatar.disambiguation}</span>
+              <span class="text-[15px] text-ink-60 text-center leading-tight">{avatar.disambiguation}</span>
             {/if}
           </button>
         {/each}

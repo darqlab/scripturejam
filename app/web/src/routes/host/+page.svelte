@@ -125,77 +125,75 @@
   }
 </script>
 
-<div class="min-h-screen bg-gray-50 p-6">
-  <div class="max-w-3xl mx-auto">
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">scripturejam</h1>
-      <p class="text-gray-500 mt-1">Create a new quiz session</p>
+<div class="min-h-screen bg-paper p-6">
+  <div class="max-w-4xl mx-auto">
+    <div class="mb-10">
+      <p class="text-sm font-medium uppercase tracking-[.28em] text-ink-38">scripturejam</p>
+      <h1 class="text-[62px] font-semibold tracking-[-.02em] leading-tight mt-2">Create a new quiz session</h1>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-      <fieldset class="bg-white border border-gray-200 rounded-xl p-4">
-        <legend class="text-sm font-semibold text-gray-700 px-1">Bible translation</legend>
-        <div class="mt-2 space-y-2">
-          {#each ["KJV", "WEB", "ASV"] as t}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8" style="grid-template-columns: 380px 1fr;">
+      <div class="space-y-6">
+        <fieldset class="bg-paper-2 border border-rule rounded-[10px] p-5">
+          <legend class="text-[24px] font-medium text-navy border-b border-rule pb-2 mb-3">Bible translation</legend>
+          <div class="space-y-3">
+            {#each ["KJV", "WEB", "ASV"] as t}
+              <label class="flex items-center gap-3 cursor-pointer min-h-[44px]">
+                <input
+                  type="radio"
+                  bind:group={translation}
+                  value={t}
+                  class="w-[22px] h-[22px] appearance-none border-[1px] border-[rgba(35,32,27,.32)] rounded-full checked:border-[6px] checked:border-navy transition-colors flex-shrink-0"
+                />
+                <span class="text-[26px] font-medium text-ink">{t}</span>
+              </label>
+            {/each}
+          </div>
+        </fieldset>
+
+        <fieldset class="bg-paper-2 border border-rule rounded-[10px] p-5">
+          <legend class="text-[24px] font-medium text-navy border-b border-rule pb-2 mb-3">Play mode</legend>
+          <div class="space-y-3">
             <label class="flex items-center gap-3 cursor-pointer min-h-[44px]">
               <input
                 type="radio"
-                bind:group={translation}
-                value={t}
-                class="w-4 h-4 accent-blue-600"
+                bind:group={mode}
+                value="individual"
+                class="w-[22px] h-[22px] appearance-none border-[1px] border-[rgba(35,32,27,.32)] rounded-full checked:border-[6px] checked:border-navy transition-colors flex-shrink-0"
               />
-              <span class="text-sm font-medium">{t}</span>
+              <div>
+                <span class="text-[26px] font-medium block text-ink">Individual</span>
+                <span class="text-[19px] text-ink-60 block">Each player picks their own answer</span>
+              </div>
             </label>
-          {/each}
-        </div>
-      </fieldset>
-
-      <fieldset class="bg-white border border-gray-200 rounded-xl p-4">
-        <legend class="text-sm font-semibold text-gray-700 px-1">Play mode</legend>
-        <div class="mt-2 space-y-2">
-          <label class="flex items-center gap-3 cursor-pointer min-h-[44px]">
-            <input
-              type="radio"
-              bind:group={mode}
-              value="individual"
-              class="w-4 h-4 accent-blue-600"
-            />
-            <div>
-              <span class="text-sm font-medium block">Individual</span>
-              <span class="text-xs text-gray-400">Each player picks their own answer</span>
-            </div>
-          </label>
-          <label class="flex items-center gap-3 cursor-pointer min-h-[44px]">
-            <input
-              type="radio"
-              bind:group={mode}
-              value="group"
-              class="w-4 h-4 accent-blue-600"
-            />
-            <div>
-              <span class="text-sm font-medium block">Group / teams</span>
-              <span class="text-xs text-gray-400">Teams discuss, one device per group</span>
-            </div>
-          </label>
-        </div>
-      </fieldset>
-    </div>
-
-    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-      <div class="border-b border-gray-200 px-5 py-3">
-        <span class="text-sm font-medium text-blue-700">Generate from a book</span>
+            <label class="flex items-center gap-3 cursor-pointer min-h-[44px]">
+              <input
+                type="radio"
+                bind:group={mode}
+                value="group"
+                class="w-[22px] h-[22px] appearance-none border-[1px] border-[rgba(35,32,27,.32)] rounded-full checked:border-[6px] checked:border-navy transition-colors flex-shrink-0"
+              />
+              <div>
+                <span class="text-[26px] font-medium block text-ink">Group / teams</span>
+                <span class="text-[19px] text-ink-60 block">Teams discuss, one device per group</span>
+              </div>
+            </label>
+          </div>
+        </fieldset>
       </div>
 
-      <div class="p-5">
-        <div class="space-y-3">
+      <div class="bg-paper-2 border border-rule rounded-[10px] overflow-hidden">
+        <div class="border-b border-rule px-5 py-3">
+          <span class="text-[24px] font-medium text-navy">Generate from a book</span>
+        </div>
+
+        <div class="p-5 space-y-4">
           <div>
-            <label for="generate-book" class="block text-sm font-medium text-gray-700 mb-1">
-              Bible book
-            </label>
+            <label for="generate-book" class="block text-sm font-medium text-ink-38 mb-1">Bible book</label>
             <select
               id="generate-book"
               bind:value={generateBook}
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] text-sm bg-white"
+              class="w-full border border-rule rounded-[6px] px-3 py-2 min-h-[44px] text-sm bg-paper-2 text-ink"
             >
               <option value="" disabled selected>Choose a book…</option>
               {#each BIBLE_BOOKS as book}
@@ -205,9 +203,9 @@
           </div>
 
           <div class="flex flex-wrap gap-2 items-end">
-            <div class="w-28">
-              <label for="generate-chapter-start" class="block text-xs text-gray-500 mb-1">
-                From chapter <span class="text-gray-400">(opt.)</span>
+            <div class="w-[150px]">
+              <label for="generate-chapter-start" class="block text-xs text-ink-60 mb-1">
+                From chapter <span class="text-ink-38">(opt.)</span>
               </label>
               <input
                 id="generate-chapter-start"
@@ -215,12 +213,12 @@
                 min="1"
                 bind:value={generateChapterStart}
                 placeholder="e.g. 1"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[40px]"
+                class="w-full border border-rule rounded-[6px] px-3 py-2 text-sm min-h-[40px] bg-paper-2 text-ink"
               />
             </div>
-            <div class="w-28">
-              <label for="generate-chapter-end" class="block text-xs text-gray-500 mb-1">
-                To chapter <span class="text-gray-400">(opt.)</span>
+            <div class="w-[150px]">
+              <label for="generate-chapter-end" class="block text-xs text-ink-60 mb-1">
+                To chapter <span class="text-ink-38">(opt.)</span>
               </label>
               <input
                 id="generate-chapter-end"
@@ -228,17 +226,17 @@
                 min={generateChapterStart ?? 1}
                 bind:value={generateChapterEnd}
                 placeholder="e.g. 5"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[40px]"
+                class="w-full border border-rule rounded-[6px] px-3 py-2 text-sm min-h-[40px] bg-paper-2 text-ink"
               />
             </div>
           </div>
-          <p class="text-xs text-gray-400">
+          <p class="text-xs text-ink-60">
             Leave both blank to draw from the whole book — e.g. Genesis chapter 1 to chapter 5
             restricts every generated question to that range.
           </p>
 
           <div>
-            <label for="generate-count" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="generate-count" class="block text-sm font-medium text-ink-38 mb-1">
               Number of questions
             </label>
             <input
@@ -247,12 +245,12 @@
               min="5"
               max="30"
               bind:value={generateCount}
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[44px] text-sm"
+              class="w-[210px] border border-rule rounded-[6px] px-3 py-2 min-h-[44px] text-sm bg-paper-2 text-ink"
             />
           </div>
 
           <fieldset>
-            <legend class="text-xs font-medium text-gray-600 mb-1">Difficulty</legend>
+            <legend class="text-xs font-medium text-ink-60 mb-1">Difficulty</legend>
             <div class="flex flex-wrap gap-4">
               {#each [["mixed", "Mixed"], ...Object.entries(DIFFICULTY_LABELS)] as [val, lbl]}
                 <label class="flex items-center gap-2 cursor-pointer min-h-[36px]">
@@ -260,16 +258,16 @@
                     type="radio"
                     bind:group={generateDifficulty}
                     value={val}
-                    class="w-4 h-4 accent-blue-600"
+                    class="w-4 h-4 appearance-none border-[1px] border-[rgba(35,32,27,.32)] rounded-full checked:border-[6px] checked:border-navy transition-colors flex-shrink-0"
                   />
-                  <span class="text-sm">{lbl}</span>
+                  <span class="text-sm text-ink">{lbl}</span>
                 </label>
               {/each}
             </div>
           </fieldset>
 
           <fieldset>
-            <legend class="text-xs font-medium text-gray-600 mb-1">Age band</legend>
+            <legend class="text-xs font-medium text-ink-60 mb-1">Age band</legend>
             <div class="flex gap-4">
               {#each [["all-ages", "All ages"], ["youth", "Youth"]] as [val, lbl]}
                 <label class="flex items-center gap-2 cursor-pointer min-h-[36px]">
@@ -277,23 +275,22 @@
                     type="radio"
                     bind:group={generateAgeBand}
                     value={val}
-                    class="w-4 h-4 accent-blue-600"
+                    class="w-4 h-4 appearance-none border-[1px] border-[rgba(35,32,27,.32)] rounded-full checked:border-[6px] checked:border-navy transition-colors flex-shrink-0"
                   />
-                  <span class="text-sm">{lbl}</span>
+                  <span class="text-sm text-ink">{lbl}</span>
                 </label>
               {/each}
             </div>
           </fieldset>
 
-          <p class="text-xs text-gray-400">
-            Questions are generated live by AI when you click "Create session" below —
-            this can take a few seconds.
+          <p class="text-[20px] text-ink-60">
+            Questions are generated live by AI when you create the session — this can take a few seconds.
           </p>
           {#if generateError}
             <p class="text-red-600 text-xs font-medium" role="alert">{generateError}</p>
           {/if}
           {#if generating}
-            <p class="text-xs text-blue-600 font-medium">Generating questions…</p>
+            <p class="text-xs text-navy font-medium">Generating questions…</p>
           {/if}
         </div>
       </div>
@@ -307,9 +304,9 @@
       type="button"
       onclick={createSession}
       disabled={!canCreate}
-      class="w-full sm:w-auto bg-blue-600 text-white px-8 py-4 rounded-xl font-bold text-base min-h-[52px] disabled:opacity-40 hover:bg-blue-700 transition-colors"
+      class="w-full sm:w-auto bg-navy text-paper px-[50px] py-[19px] rounded-[6px] font-bold text-[30px] min-h-[52px] disabled:opacity-40 transition-opacity"
     >
-      {creating ? "Creating session…" : "Create session →"}
+      {creating ? "Creating session…" : generating ? "Generating questions…" : "Create session →"}
     </button>
   </div>
 </div>

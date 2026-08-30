@@ -18,7 +18,7 @@
 
   const SHAPES = ["▲", "●", "■", "◆"];
   const SHAPE_LABELS = ["Triangle", "Circle", "Square", "Diamond"];
-  // Keys map to CSS custom properties --color-option-{a,b,c,d} (a=blue/▲, b=red/●, c=amber/■, d=green/◆)
+  // Keys map to CSS custom properties --color-option-{a,b,c,d} (a=navy/▲, b=clay/●, c=bronze/■, d=vine/◆)
   const OPTION_KEYS = ["a", "b", "c", "d"] as const;
 
   let timerProgress = $state(100);
@@ -209,67 +209,67 @@
 </script>
 
 {#if $gameStore.reconnecting}
-  <div class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
-    <div class="bg-white rounded-2xl p-8 text-center shadow-xl max-w-xs mx-4">
-      <p class="text-xl font-bold mb-2">Reconnecting…</p>
-      <p class="text-sm text-gray-500">Your score is safe</p>
+  <div class="fixed inset-0 z-50 bg-[rgba(35,32,27,.55)] flex items-center justify-center">
+    <div class="bg-paper rounded-[16px] p-[30px_34px] text-center shadow-xl max-w-[280px] mx-4">
+      <p class="text-[30px] font-semibold mb-2 text-ink">Reconnecting…</p>
+      <p class="text-[20px] text-ink-60">Your score is safe</p>
     </div>
   </div>
 {/if}
 
 {#if kicked}
-  <main class="min-h-screen flex flex-col items-center justify-center p-6 bg-red-50">
+  <main class="min-h-screen flex flex-col items-center justify-center p-6 bg-[rgba(154,52,18,.1)]">
     <div class="max-w-sm w-full text-center space-y-4">
-      <div class="text-6xl">🚫</div>
-      <h1 class="text-2xl font-bold text-red-700">Removed from session</h1>
-      <p class="text-gray-600">{kickedReason || "You were removed from this session."}</p>
-      <a href="/" class="inline-block mt-4 px-6 py-3 bg-gray-800 text-white rounded-lg font-semibold min-h-[44px]">
+      <div class="text-6xl">✕</div>
+      <h1 class="text-2xl font-bold text-clay">Removed from session</h1>
+      <p class="text-ink-60">{kickedReason || "You were removed from this session."}</p>
+      <a href="/" class="inline-block mt-4 px-6 py-3 bg-navy text-paper rounded-[10px] font-semibold min-h-[44px] hover:bg-navy/90 transition-colors">
         Go home
       </a>
     </div>
   </main>
 {:else if $gameStore.sessionState === "lobby"}
-  <main class="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-600 to-blue-800 text-white">
+  <main class="min-h-screen flex flex-col items-center justify-center p-6 bg-paper text-ink">
     <div class="max-w-sm w-full text-center space-y-6">
       {#if $gameStore.avatarId}
         <img
           src="/api/avatars/{$gameStore.avatarId}/monogram.svg?name={encodeURIComponent($gameStore.nickname ?? '')}"
           alt={$gameStore.nickname ?? "You"}
-          class="w-24 h-24 rounded-full mx-auto ring-4 ring-white/40"
+          class="w-24 h-24 rounded-full mx-auto ring-4 ring-navy-8"
         />
       {:else}
-        <div class="w-24 h-24 rounded-full bg-blue-500 mx-auto ring-4 ring-white/40"></div>
+        <div class="w-24 h-24 rounded-full bg-navy-8 mx-auto ring-4 ring-navy-8"></div>
       {/if}
       <div>
-        <p class="text-2xl font-bold">{$gameStore.nickname ?? "Player"}</p>
-        <p class="text-blue-200 text-sm mt-1">You're in!</p>
+        <p class="text-2xl font-bold text-ink">{$gameStore.nickname ?? "Player"}</p>
+        <p class="text-ink-60 text-sm mt-1">You're in!</p>
       </div>
-      <div class="bg-blue-700/50 rounded-2xl p-6">
-        <p class="text-lg font-semibold animate-pulse">Waiting for host to start…</p>
-        <p class="text-blue-200 text-sm mt-2">Get ready for the quiz</p>
+      <div class="bg-navy-8 rounded-[10px] p-6 border border-[rgba(30,58,95,.2)]">
+        <p class="text-lg font-semibold text-navy animate-pulse">Waiting for host to start…</p>
+        <p class="text-ink-60 text-sm mt-2">Get ready for the quiz</p>
       </div>
     </div>
   </main>
 {:else if $gameStore.sessionState === "question" && $gameStore.currentQuestion}
   {@const q = $gameStore.currentQuestion}
-  <main class="min-h-screen flex flex-col bg-gray-900 text-white">
-    <div class="px-4 pt-4 pb-2">
-      <div class="flex items-center justify-between text-sm text-gray-400 mb-2">
-        <span>Question {q.index + 1} / {q.total}</span>
-        <span class="font-mono">{$gameStore.yourLocked ? "Locked in ✓" : ""}</span>
+  <main class="min-h-screen flex flex-col bg-paper text-ink">
+    <div class="px-[18px] pt-4 pb-2">
+      <div class="flex items-center justify-between text-sm text-ink-60 mb-2">
+        <span class="font-medium">Question {q.index + 1} / {q.total}</span>
+        <span class="font-mono text-vine font-medium">{$gameStore.yourLocked ? "Locked in ✓" : ""}</span>
       </div>
-      <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+      <div class="w-full bg-[rgba(35,32,27,.12)] rounded-full h-[11px] overflow-hidden">
         <div
-          class="h-full rounded-full transition-none {timerProgress > 30 ? 'bg-green-400' : timerProgress > 10 ? 'bg-amber-400' : 'bg-red-500'}"
+          class="h-full rounded-full transition-none bg-vine"
           style="width: {timerProgress}%"
         ></div>
       </div>
     </div>
 
-    <div class="flex-1 flex flex-col px-4 pb-4 justify-center">
-      <p class="text-center text-gray-400 text-sm mb-6">Look at the host screen for the question</p>
+    <div class="flex-1 flex flex-col px-[16px] pb-4 justify-center">
+      <p class="text-center text-ink-38 text-sm mb-6">Look at the host screen for the question</p>
 
-      <div class="grid grid-cols-1 gap-3 max-w-sm mx-auto w-full">
+      <div class="grid grid-cols-2 gap-3 max-w-sm mx-auto w-full">
         {#each q.options as option, i}
           {@const locked = $gameStore.yourLocked}
           {@const isPick = $gameStore.yourPick === option.id}
@@ -279,83 +279,86 @@
             disabled={locked || answerSubmitting}
             style="background-color: var(--color-option-{OPTION_KEYS[i]})"
             class="
-              flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-black/20 font-semibold text-white
-              min-h-[56px] transition-all active:scale-95
+              flex items-center justify-center px-4 py-3 rounded-[18px] border-2 border-[rgba(35,32,27,.18)] font-semibold text-paper
+              min-h-[170px] transition-all active:scale-[.95]
               {!locked ? 'hover:brightness-90' : ''}
-              {locked && isPick ? 'ring-4 ring-white/60 scale-95' : ''}
-              {locked && !isPick ? 'opacity-40' : ''}
+              {locked && isPick ? 'ring-4 ring-[rgba(246,242,232,.9)] ring-offset-2 ring-offset-[rgba(35,32,27,.18)] scale-[.95]' : ''}
+              {locked && !isPick ? 'opacity-35' : ''}
             "
             aria-label="{SHAPE_LABELS[i]}: {option.text}"
           >
-            <span class="text-2xl w-8 text-center flex-shrink-0" aria-hidden="true">{SHAPES[i]}</span>
-            <span class="flex-1 text-left text-sm leading-snug">{option.text}</span>
+            <span class="text-[58px] w-[72px] text-center flex-shrink-0" aria-hidden="true">{SHAPES[i]}</span>
           </button>
         {/each}
       </div>
 
       {#if $gameStore.yourLocked}
-        <p class="text-center text-green-400 text-sm font-medium mt-4">Answer locked in — waiting for reveal</p>
+        <p class="text-center text-vine text-sm font-medium mt-4">Answer locked in — waiting for reveal</p>
       {/if}
     </div>
+
+    <footer class="px-[18px] pt-4 border-t border-rule">
+      <p class="text-center text-[19px] text-ink-38">Answers are on the big screen</p>
+    </footer>
   </main>
 {:else if $gameStore.sessionState === "reveal" && $gameStore.revealData}
   {@const r = $gameStore.revealData}
-  <main class="min-h-screen flex flex-col bg-gray-900 text-white px-4 py-6">
+  <main class="min-h-screen flex flex-col bg-paper text-ink px-[18px] py-6">
     <div class="max-w-sm mx-auto w-full space-y-5">
-      <div class="rounded-2xl p-6 text-center {r.yourCorrect ? 'bg-green-600' : 'bg-red-600'}">
-        <p class="text-4xl mb-2">{r.yourCorrect ? "✓" : "✗"}</p>
-        <p class="text-2xl font-bold">{r.yourCorrect ? "Correct!" : "Wrong"}</p>
+      <div class="rounded-[18px] p-[28px_20px] text-center {r.yourCorrect ? 'bg-vine' : 'bg-clay'} text-paper">
+        <p class="text-[46px] mb-2">{r.yourCorrect ? "✓" : "✗"}</p>
+        <p class="text-[38px] font-bold">{r.yourCorrect ? "Correct!" : "Wrong"}</p>
         {#if r.yourAwarded > 0}
-          <p class="text-lg mt-1">+{r.yourAwarded} points</p>
+          <p class="text-[24px] mt-1 opacity-90">+{r.yourAwarded} points</p>
         {/if}
       </div>
 
-      <p class="text-center text-gray-400 text-sm">See the host screen for the correct answer and scripture</p>
+      <p class="text-center text-ink-38 text-sm">See the host screen for the correct answer and scripture</p>
 
-      <div class="bg-gray-800 rounded-xl p-4 flex items-center justify-between">
+      <div class="bg-paper-2 rounded-[14px] border border-rule p-4 flex items-center justify-between">
         <div>
-          <p class="text-xs text-gray-400">Your rank</p>
-          <p class="text-2xl font-bold">{ordinal(r.yourRank)}</p>
-          <p class="text-xs text-gray-400">of {r.totalPlayers}</p>
+          <p class="text-xs text-ink-38 uppercase tracking-wide">Your rank</p>
+          <p class="text-[34px] font-bold text-ink">{ordinal(r.yourRank)}</p>
+          <p class="text-xs text-ink-38">of {r.totalPlayers}</p>
         </div>
         <div class="text-right">
-          <p class="text-xs text-gray-400">Score</p>
-          <p class="text-2xl font-bold">{r.yourCumulative}</p>
+          <p class="text-xs text-ink-38 uppercase tracking-wide">Score</p>
+          <p class="text-[34px] font-bold text-navy">{r.yourCumulative}</p>
         </div>
       </div>
     </div>
   </main>
 {:else if $gameStore.sessionState === "final" && $gameStore.finalData}
   {@const f = $gameStore.finalData}
-  <main class="min-h-screen flex flex-col bg-gradient-to-b from-purple-700 to-purple-900 text-white px-4 py-8">
+  <main class="min-h-screen flex flex-col bg-[linear-gradient(180deg,var(--navy),#1a2d4a)] text-paper px-4 py-8">
     <div class="max-w-sm mx-auto w-full space-y-6 text-center">
       <div>
         <p class="text-5xl mb-3">🏆</p>
         <h1 class="text-3xl font-bold">Quiz complete!</h1>
       </div>
 
-      <div class="bg-white/20 rounded-2xl p-6 space-y-2">
+      <div class="bg-white/10 rounded-[18px] p-6 space-y-2 border border-white/10">
         <p class="text-5xl font-black">{ordinal(f.yourFinalRank)}</p>
-        <p class="text-purple-200">of {f.totalPlayers} players</p>
+        <p class="text-white/70">of {f.totalPlayers} players</p>
         <div class="border-t border-white/20 pt-3 mt-3">
           <p class="text-2xl font-bold">{f.yourFinalScore} pts</p>
-          <p class="text-purple-200 text-sm">{f.yourAnsweredCorrect} correct answers</p>
+          <p class="text-white/70 text-sm">{f.yourAnsweredCorrect} correct answers</p>
         </div>
       </div>
 
       <a
         href="/r/{code}"
-        class="block w-full bg-white text-purple-800 font-bold rounded-xl px-4 py-4 min-h-[44px] hover:bg-purple-100 transition-colors"
+        class="block w-full bg-paper text-navy font-bold rounded-[18px] px-4 py-4 min-h-[44px] hover:bg-paper/90 transition-colors"
       >
         Open scoreboard →
       </a>
     </div>
   </main>
 {:else}
-  <main class="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-900 text-white">
+  <main class="min-h-screen flex flex-col items-center justify-center p-6 bg-paper text-ink">
     <div class="text-center space-y-3">
-      <div class="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
-      <p class="text-gray-300">Connecting…</p>
+      <div class="w-10 h-10 border-4 border-navy border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <p class="text-ink-60">Connecting…</p>
     </div>
   </main>
 {/if}

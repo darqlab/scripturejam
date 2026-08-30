@@ -213,12 +213,24 @@ export async function sessionRoutes(app: FastifyInstance) {
     }
   );
 
-  const generateBodySchema = z.object({
-    hostToken: z.string().min(16).max(128),
-    book: z.string().min(1),
-    count: z.coerce.number().int().positive().optional(),
-    ageBand: z.enum(["youth", "all-ages"]).optional(),
-  });
+  const generateBodySchema = z
+    .object({
+      hostToken: z.string().min(16).max(128),
+      book: z.string().min(1),
+      count: z.coerce.number().int().positive().optional(),
+      ageBand: z.enum(["youth", "all-ages"]).optional(),
+      chapterStart: z.coerce.number().int().positive().optional(),
+      chapterEnd: z.coerce.number().int().positive().optional(),
+      difficulty: z.enum(["easy", "medium", "hard", "mixed"]).optional(),
+    })
+    .refine(
+      (b) => (b.chapterStart === undefined) === (b.chapterEnd === undefined),
+      { message: "chapterStart and chapterEnd must be provided together" }
+    )
+    .refine(
+      (b) => b.chapterStart === undefined || b.chapterEnd === undefined || b.chapterStart <= b.chapterEnd,
+      { message: "chapterStart must be <= chapterEnd" }
+    );
 
   app.post<{ Params: { code: string } }>(
     "/api/sessions/:code/generate",
@@ -229,7 +241,7 @@ export async function sessionRoutes(app: FastifyInstance) {
       if (!parsed.success) {
         return reply.status(400).send({ error: "invalid_request", details: parsed.error.flatten() });
       }
-      const { hostToken, book, count, ageBand } = parsed.data;
+      const { hostToken, book, count, ageBand, chapterStart, chapterEnd, difficulty } = parsed.data;
 
       const session = await getSession(code);
       if (!session) return reply.status(404).send({ error: "session_not_found" });
@@ -243,12 +255,18 @@ export async function sessionRoutes(app: FastifyInstance) {
 
       const maxAllowed = Math.min(config.MAX_GENERATE_QUESTIONS, config.MAX_QUESTIONS_PER_CUSTOM_PACK);
       const requestedCount = Math.max(5, Math.min(count ?? 10, maxAllowed));
+      const chapterRange =
+        chapterStart !== undefined && chapterEnd !== undefined
+          ? { start: chapterStart, end: chapterEnd }
+          : undefined;
 
       try {
         const { pack, questions } = await generateQuestionsForBook(
           canonicalBook,
           requestedCount,
-          ageBand ?? "all-ages"
+          ageBand ?? "all-ages",
+          chapterRange,
+          difficulty ?? "mixed"
         );
         return reply.send({ pack, questions });
       } catch (err) {

@@ -2,7 +2,7 @@
  * Unit tests for content/generate.ts — validation/filtering logic only.
  *
  * The NVIDIA (OpenAI-compatible) client is mocked (never a real network
- * call); it returns a hand-written YAML string standing in for a model
+ * call); it returns a hand-written JSON string standing in for a model
  * response. This exercises schema validation and the book-mismatch filter
  * described in content-tools/prompts/question-generation.md's "known
  * failure modes".
@@ -33,30 +33,30 @@ vi.mock("openai", () => {
   };
 });
 
-function yamlResponse(text: string) {
+function jsonResponse(obj: unknown) {
   return {
-    choices: [{ message: { content: text } }],
+    choices: [{ message: { content: JSON.stringify(obj) } }],
   };
 }
 
-const VALID_YAML = `
-questions:
-  - id: q1
-    prompt: "Who led the Israelites out of Egypt?"
-    options:
-      - id: a
-        text: Moses
-      - id: b
-        text: Aaron
-    correctOptionId: a
-    references:
-      - book: Exodus
-        chapter: 3
-        verse_start: 10
-    difficulty: easy
-    themes:
-      - narrative
-`;
+const VALID_RESPONSE = {
+  questions: [
+    {
+      id: "q1",
+      // Deliberately includes an embedded colon (the exact shape that broke
+      // the old YAML output — see generate.ts's json_object-mode comment).
+      prompt: "In Exodus 3:10, who did the LORD send to Pharaoh?",
+      options: [
+        { id: "a", text: "Moses" },
+        { id: "b", text: "Aaron" },
+      ],
+      correctOptionId: "a",
+      references: [{ book: "Exodus", chapter: 3, verse_start: 10 }],
+      difficulty: "easy",
+      themes: ["narrative"],
+    },
+  ],
+};
 
 describe("generateQuestionsForBook", () => {
   beforeEach(() => {
@@ -65,7 +65,7 @@ describe("generateQuestionsForBook", () => {
   });
 
   it("returns validated questions for a valid model response", async () => {
-    mockCreate.mockResolvedValue(yamlResponse(VALID_YAML));
+    mockCreate.mockResolvedValue(jsonResponse(VALID_RESPONSE));
     const { generateQuestionsForBook } = await import("../src/content/generate.js");
 
     const { pack, questions } = await generateQuestionsForBook("Exodus", 5, "all-ages");
@@ -77,26 +77,36 @@ describe("generateQuestionsForBook", () => {
     expect(pack.title).toBe("Generated: Exodus");
   });
 
+  it("respects a requested chapter range, dropping out-of-range references", async () => {
+    const outOfRange = {
+      questions: [
+        {
+          ...VALID_RESPONSE.questions[0],
+          id: "q-out-of-range",
+          references: [{ book: "Exodus", chapter: 20, verse_start: 1 }],
+        },
+      ],
+    };
+    mockCreate.mockResolvedValue(jsonResponse(outOfRange));
+    const { generateQuestionsForBook, GenerationFailedError } = await import(
+      "../src/content/generate.js"
+    );
+
+    await expect(
+      generateQuestionsForBook("Exodus", 5, "all-ages", { start: 1, end: 5 })
+    ).rejects.toBeInstanceOf(GenerationFailedError);
+  });
+
   it("drops questions whose references don't match the requested book", async () => {
-    const wrongBookYaml = `
-questions:
-  - id: q1
-    prompt: "Who led the Israelites out of Egypt?"
-    options:
-      - id: a
-        text: Moses
-      - id: b
-        text: Aaron
-    correctOptionId: a
-    references:
-      - book: Genesis
-        chapter: 1
-        verse_start: 1
-    difficulty: easy
-    themes:
-      - narrative
-`;
-    mockCreate.mockResolvedValue(yamlResponse(wrongBookYaml));
+    const wrongBook = {
+      questions: [
+        {
+          ...VALID_RESPONSE.questions[0],
+          references: [{ book: "Genesis", chapter: 1, verse_start: 1 }],
+        },
+      ],
+    };
+    mockCreate.mockResolvedValue(jsonResponse(wrongBook));
     const { generateQuestionsForBook, GenerationFailedError } = await import(
       "../src/content/generate.js"
     );
@@ -108,37 +118,24 @@ questions:
   });
 
   it("drops schema-invalid questions but keeps valid ones in the same batch", async () => {
-    const mixedYaml = `
-questions:
-  - id: bad-question
-    prompt: "This one is missing options"
-    options:
-      - id: a
-        text: Only one option
-    correctOptionId: a
-    references:
-      - book: Exodus
-        chapter: 3
-        verse_start: 10
-    difficulty: easy
-    themes: []
-  - id: good-question
-    prompt: "Who led the Israelites out of Egypt?"
-    options:
-      - id: a
-        text: Moses
-      - id: b
-        text: Aaron
-    correctOptionId: a
-    references:
-      - book: Exodus
-        chapter: 3
-        verse_start: 10
-    difficulty: easy
-    themes:
-      - narrative
-`;
-    mockCreate.mockResolvedValue(yamlResponse(mixedYaml));
+    const mixed = {
+      questions: [
+        {
+          id: "bad-question",
+          prompt: "This one is missing options",
+          options: [{ id: "a", text: "Only one option" }],
+          correctOptionId: "a",
+          references: [{ book: "Exodus", chapter: 3, verse_start: 10 }],
+          difficulty: "easy",
+          themes: [],
+        },
+        {
+          ...VALID_RESPONSE.questions[0],
+          id: "good-question",
+        },
+      ],
+    };
+    mockCreate.mockResolvedValue(jsonResponse(mixed));
     const { generateQuestionsForBook } = await import("../src/content/generate.js");
 
     const { questions } = await generateQuestionsForBook("Exodus", 5, "all-ages");
@@ -166,8 +163,10 @@ questions:
     process.env.NVIDIA_API_KEY = original;
   });
 
-  it("throws GenerationFailedError on invalid YAML", async () => {
-    mockCreate.mockResolvedValue(yamlResponse("not: valid: yaml: at: all: ["));
+  it("throws GenerationFailedError on invalid JSON", async () => {
+    mockCreate.mockResolvedValue({
+      choices: [{ message: { content: "not valid json at all {" } }],
+    });
     const { generateQuestionsForBook, GenerationFailedError } = await import(
       "../src/content/generate.js"
     );
@@ -175,5 +174,17 @@ questions:
     await expect(generateQuestionsForBook("Exodus", 5, "all-ages")).rejects.toBeInstanceOf(
       GenerationFailedError
     );
+  });
+
+  it("recovers JSON wrapped in a markdown code fence", async () => {
+    mockCreate.mockResolvedValue({
+      choices: [
+        { message: { content: "```json\n" + JSON.stringify(VALID_RESPONSE) + "\n```" } },
+      ],
+    });
+    const { generateQuestionsForBook } = await import("../src/content/generate.js");
+
+    const { questions } = await generateQuestionsForBook("Exodus", 5, "all-ages");
+    expect(questions).toHaveLength(1);
   });
 });

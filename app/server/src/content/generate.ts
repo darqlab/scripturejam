@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-import yaml from "js-yaml";
 import { z } from "zod";
 import type { Question, QuestionPack } from "@scripturejam/types";
 import { config } from "../config.js";
@@ -41,25 +40,50 @@ Hard rules:
    where verse_end is optional and equals verse_start for single-verse refs.
    Book names use the KJV canonical English form (e.g., "1 Kings" not "I Kgs").
 
-Output a single YAML document with a top-level \`questions:\` list. No prose
-before or after. No markdown code fences around the YAML.`;
+Output a single JSON object with a top-level "questions" array. No prose
+before or after. No markdown code fences around the JSON. All strings must be
+valid JSON strings (proper escaping) — this matters because many prompts and
+answers legitimately contain a colon (e.g. "Psalm 2:7"), which is exactly the
+kind of text that breaks less strict formats, so stick to well-formed JSON.`;
+
+export interface ChapterRange {
+  start: number;
+  end: number;
+}
+
+export type DifficultyChoice = "easy" | "medium" | "hard" | "mixed";
 
 function buildUserPrompt(
   book: string,
   count: number,
   ageBand: "youth" | "all-ages",
   packTitle: string,
-  packDescription: string
+  packDescription: string,
+  chapterRange: ChapterRange | undefined,
+  difficulty: DifficultyChoice
 ): string {
-  const easy = Math.round(count * 0.4);
-  const medium = Math.round(count * 0.4);
-  const hard = Math.max(0, count - easy - medium);
+  let easy: number;
+  let medium: number;
+  let hard: number;
+  if (difficulty === "mixed") {
+    easy = Math.round(count * 0.4);
+    medium = Math.round(count * 0.4);
+    hard = Math.max(0, count - easy - medium);
+  } else {
+    easy = difficulty === "easy" ? count : 0;
+    medium = difficulty === "medium" ? count : 0;
+    hard = difficulty === "hard" ? count : 0;
+  }
+
+  const scopeLine = chapterRange
+    ? `${book} chapter${chapterRange.start === chapterRange.end ? "" : "s"} ${chapterRange.start}${chapterRange.start === chapterRange.end ? "" : `-${chapterRange.end}`} only`
+    : `${book} (whole book, no chapter restriction)`;
 
   return `Pack: ${packTitle}
 Description: ${packDescription}
 Audience: ${ageBand}
 Allowed scope (questions may only cite these passages):
-${book} (whole book, no chapter restriction)
+${scopeLine}
 
 Generate ${count} candidate questions for this pack. Target difficulty mix:
 - easy:   ${easy}
@@ -74,26 +98,35 @@ Difficulty definitions:
 Avoid duplicating these prompts already generated for this pack:
 (none — first batch)
 
-Output schema (YAML):
+Output schema (JSON):
 
-questions:
-  - id: <kebab-case slug, unique within this pack>
-    prompt: <the question text — one sentence, ends with "?">
-    options:
-      - id: a
-        text: <option text>
-      - id: b
-        text: <option text>
-      # 2–4 options total
-    correctOptionId: <one of a/b/c/d>
-    references:
-      - book: <KJV canonical book name>
-        chapter: <int>
-        verse_start: <int>
-        verse_end: <int, optional, omit if single verse>
-    difficulty: easy | medium | hard
-    themes:
-      - <one or more tags: parable, prophecy, miracle, narrative, etc.>
+{
+  "questions": [
+    {
+      "id": "<kebab-case slug, unique within this pack>",
+      "prompt": "<the question text — one sentence, ends with \"?\">",
+      "options": [
+        { "id": "a", "text": "<option text>" },
+        { "id": "b", "text": "<option text>" }
+        // 2–4 options total
+      ],
+      "correctOptionId": "<one of a/b/c/d>",
+      "references": [
+        {
+          "book": "<KJV canonical book name>",
+          "chapter": <int>,
+          "verse_start": <int>,
+          "verse_end": <int, optional, omit if single verse>
+        }
+      ],
+      "difficulty": "easy | medium | hard",
+      "themes": ["<one or more tags: parable, prophecy, miracle, narrative, etc.>"]
+    }
+  ]
+}
+
+(The // comment above is illustrative only — do not include comments in the
+actual JSON output; JSON does not support them.)
 
 Self-check before responding:
 - Each question has exactly one correctOptionId.
@@ -110,15 +143,29 @@ const generationResponseSchema = z.object({
 export async function generateQuestionsForBook(
   book: string,
   count: number,
-  ageBand: "youth" | "all-ages"
+  ageBand: "youth" | "all-ages",
+  chapterRange?: ChapterRange,
+  difficulty: DifficultyChoice = "mixed"
 ): Promise<{ pack: QuestionPack; questions: Question[] }> {
   if (!config.NVIDIA_API_KEY) {
     throw new GenerationNotConfiguredError("NVIDIA_API_KEY is not set");
   }
 
-  const packTitle = `Generated: ${book}`;
-  const packDescription = `AI-generated questions from the book of ${book}.`;
-  const userPrompt = buildUserPrompt(book, count, ageBand, packTitle, packDescription);
+  const packTitle = chapterRange
+    ? `Generated: ${book} ${chapterRange.start}-${chapterRange.end}`
+    : `Generated: ${book}`;
+  const packDescription = chapterRange
+    ? `AI-generated questions from ${book} chapters ${chapterRange.start}-${chapterRange.end}.`
+    : `AI-generated questions from the book of ${book}.`;
+  const userPrompt = buildUserPrompt(
+    book,
+    count,
+    ageBand,
+    packTitle,
+    packDescription,
+    chapterRange,
+    difficulty
+  );
 
   const client = new OpenAI({ baseURL: config.NVIDIA_BASE_URL, apiKey: config.NVIDIA_API_KEY });
 
@@ -134,8 +181,14 @@ export async function generateQuestionsForBook(
       temperature: 0.7,
       top_p: 0.95,
       max_tokens: 4096,
+      // json_object mode: the endpoint enforces syntactically valid JSON,
+      // which is what actually fixed the recurring generation failures —
+      // unquoted YAML scalars containing a bare colon (e.g. "Psalm 2:7...",
+      // extremely common in this app's prompts) kept breaking the YAML
+      // parser no matter how the prompt was worded; JSON has no such trap.
+      response_format: { type: "json_object" },
       // Match the working reference script — thinking/reasoning tokens off,
-      // we only want the final YAML in `content`. NVIDIA's endpoint expects
+      // we only want the final JSON in `content`. NVIDIA's endpoint expects
       // `chat_template_kwargs` as a top-level body field, not wrapped in
       // `extra_body` (that wrapper is a Python-SDK-only convenience; the
       // Node SDK serializes whatever top-level keys you pass directly).
@@ -155,16 +208,27 @@ export async function generateQuestionsForBook(
     throw new GenerationFailedError("NVIDIA API call failed", err);
   }
 
-  let parsedYaml: unknown;
+  let parsedJson: unknown;
   try {
-    parsedYaml = yaml.load(responseText);
+    parsedJson = JSON.parse(responseText);
   } catch (err) {
-    throw new GenerationFailedError("Model did not return valid YAML", err);
+    // Even under json_object mode, models occasionally wrap the JSON in
+    // markdown fences or leave stray prose around it — strip a fenced block
+    // if present and retry once before giving up.
+    const fenced = responseText.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (!fenced) {
+      throw new GenerationFailedError("Model did not return valid JSON", err);
+    }
+    try {
+      parsedJson = JSON.parse(fenced[1]);
+    } catch {
+      throw new GenerationFailedError("Model did not return valid JSON", err);
+    }
   }
 
-  const shapeParsed = generationResponseSchema.safeParse(parsedYaml);
+  const shapeParsed = generationResponseSchema.safeParse(parsedJson);
   if (!shapeParsed.success) {
-    throw new GenerationFailedError("Model YAML did not match the expected { questions: [...] } shape");
+    throw new GenerationFailedError("Model JSON did not match the expected { questions: [...] } shape");
   }
 
   const candidateQuestions: Question[] = [];
@@ -177,11 +241,16 @@ export async function generateQuestionsForBook(
     const q = result.data;
 
     // Known failure mode: don't trust the model's own self-check — verify
-    // every reference actually cites the requested book.
-    const matchesBook = q.references.some(
-      (ref) => ref.book.trim().toLowerCase() === book.trim().toLowerCase()
-    );
-    if (!matchesBook) {
+    // every reference actually cites the requested book (and chapter range,
+    // when one was requested).
+    const matchesScope = q.references.some((ref) => {
+      if (ref.book.trim().toLowerCase() !== book.trim().toLowerCase()) return false;
+      if (chapterRange) {
+        return ref.chapter >= chapterRange.start && ref.chapter <= chapterRange.end;
+      }
+      return true;
+    });
+    if (!matchesScope) {
       continue;
     }
 
@@ -203,6 +272,8 @@ export async function generateQuestionsForBook(
 
   logger.info("Question generation succeeded", {
     book,
+    chapterRange,
+    difficulty,
     requestedCount: count,
     returnedCount: questions.length,
     elapsedMs: Date.now() - startedAt,
@@ -214,7 +285,7 @@ export async function generateQuestionsForBook(
     .replace(/(^-|-$)/g, "");
 
   const pack: QuestionPack = {
-    id: `generated-${slug}-${timestamp}`,
+    id: `generated-${slug}${chapterRange ? `-${chapterRange.start}-${chapterRange.end}` : ""}-${timestamp}`,
     title: packTitle,
     description: packDescription,
     ageBand,

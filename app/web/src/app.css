@@ -1,12 +1,31 @@
 @import "tailwindcss";
 
-/* scripturejam design tokens */
+/* scripturejam design tokens — mapped from the UI/UX handoff */
 :root {
-  /* Option shape colors — color-blind-safe, always paired with shape icons */
-  --color-option-a: #3b82f6; /* blue  — triangle ▲ */
-  --color-option-b: #ef4444; /* red   — circle  ● */
-  --color-option-c: #f59e0b; /* amber — square  ■ */
-  --color-option-d: #10b981; /* green — diamond ◆ */
+  --paper: #F6F2E8;
+  --paper-2: #FCFAF4;
+  --ink: #23201B;
+  --ink-60: rgba(35, 32, 27, 0.6);
+  --ink-38: rgba(35, 32, 27, 0.62);
+  --rule: rgba(35, 32, 27, 0.13);
+  --navy: #1E3A5F;
+  --navy-8: rgba(30, 58, 95, 0.07);
+  --vine: #3F6212;
+  --vine-8: rgba(63, 98, 18, 0.07);
+  --clay: #9A3412;
+  --bronze: #8C5E2A;
+
+  /* Answer option colors — color-blind-safe, always paired with shape icons */
+  --color-option-a: #1E3A5F; /* navy — triangle ▲ */
+  --color-option-b: #9A3412; /* clay — circle ● */
+  --color-option-c: #8C5E2A; /* bronze — square ■ */
+  --color-option-d: #3F6212; /* vine — diamond ◆ */
+
+  /* Shape glyphs */
+  --shape-a: "▲";
+  --shape-b: "●";
+  --shape-c: "■";
+  --shape-d: "◆";
 }
 
 /* High-contrast theme (toggled via .high-contrast on <html>) */
@@ -15,9 +34,78 @@ html.high-contrast {
   --color-option-b: #ff0000;
   --color-option-c: #ff8800;
   --color-option-d: #008000;
+  --ink: #000;
+  --ink-60: #333;
+  --ink-38: #333;
+  --rule: #000;
+  --navy: #000080;
+  --vine: #006400;
+  --clay: #8b0000;
+  --bronze: #b8860b;
 }
 
 /* Large-text mode: bump root font-size so all rem units scale up 25% */
 html.large-text {
   font-size: 125%;
 }
+
+/* Global base styles */
+* {
+  font-variant-numeric: tabular-nums;
+}
+
+html {
+  font-family: "EB Garamond", Georgia, serif;
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+/* EB Garamond font faces — self-hosted for offline/LAN deployments */
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/fonts/EBGaramond-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/fonts/EBGaramond-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/fonts/EBGaramond-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/fonts/EBGaramond-Italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Utility classes for design tokens */
+.bg-paper { background-color: var(--paper); }
+.bg-paper-2 { background-color: var(--paper-2); }
+.text-ink { color: var(--ink); }
+.text-ink-60 { color: var(--ink-60); }
+.text-ink-38 { color: var(--ink-38); }
+.text-navy { color: var(--navy); }
+.text-vine { color: var(--vine); }
+.text-clay { color: var(--clay); }
+.text-bronze { color: var(--bronze); }
+.border-rule { border-color: var(--rule); }
+.border-navy { border-color: var(--navy); }
+.border-vine { border-color: var(--vine); }
+.border-clay { border-color: var(--clay); }
+.ring-navy { --tw-ring-color: var(--navy); }
+.ring-vine { --tw-ring-color: var(--vine); }
+
+/* Hairline shadow */
+.shadow-hairline { box-shadow: 0 1px 0 rgba(35, 32, 27, 0.05); }

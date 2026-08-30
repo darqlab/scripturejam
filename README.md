@@ -7,13 +7,13 @@ scripturejam is a self-hosted Kahoot-style Bible quiz app for live church events
 ## Requirements
 
 - Docker and Docker Compose (v2)
-- A public hostname (for Cloudflare Tunnel or Caddy path)
+- A public hostname, only if exposing to the internet (Caddy path). LAN-only is fully supported and needs no hostname.
 
 ---
 
 ## Install
 
-### Raspberry Pi (one-line installer)
+### One-line installer (any Docker-capable host)
 
 Installs Docker, clones the repo, generates secrets, and starts the stack — all in one command.
 
@@ -24,10 +24,10 @@ curl -fsSL https://raw.githubusercontent.com/darqlab/scripturejam/main/scripts/i
 The installer will offer to download the Bible texts during setup. Once complete, open the host console in a browser on the same network:
 
 ```
-http://<pi-ip>:4000/host
+http://<host-ip>:4000/host
 ```
 
-Players join at `http://<pi-ip>:4000/j/<code>` or by scanning the QR code shown on the host screen.
+Players join at `http://<host-ip>:4000/j/<code>` or by scanning the QR code shown on the host screen.
 
 **Manage the stack:**
 
@@ -42,30 +42,16 @@ Players join at `http://<pi-ip>:4000/j/<code>` or by scanning the QR code shown 
 
 ---
 
-### Cloudflare Tunnel (no inbound ports required)
-
-```bash
-git clone <repo-url> && cd scripturejam/deploy
-cp ../.env.example .env
-```
-
-Edit `.env` — fill in `IP_HASH_SECRET`, Postgres password, and `TUNNEL_TOKEN`.
-In Nginx Proxy Manager, add a proxy host pointing at `app:3000` on the `scripturejam_internal` network.
-
-```bash
-docker compose -f docker-compose.yml -f compose.cloudflare.yml up -d
-```
-
-Visit your public URL at `/host` to create a session.
-
 ### Caddy (direct internet, needs static IP)
 
 ```bash
 git clone <repo-url> && cd scripturejam/deploy
 cp ../.env.example .env
+mkdir -p secrets && openssl rand -hex 24 > secrets/postgres_password.txt && chmod 600 secrets/postgres_password.txt
 ```
 
-Edit `.env` — fill in `IP_HASH_SECRET`, Postgres password, and `PUBLIC_HOSTNAME=quiz.example.com`.
+Edit `.env` — fill in `IP_HASH_SECRET`, `PUBLIC_HOSTNAME=quiz.example.com`, and `DATABASE_URL`
+using the same password you just generated into `secrets/postgres_password.txt`.
 
 ```bash
 docker compose -f docker-compose.yml -f compose.caddy.yml up -d
@@ -118,7 +104,6 @@ See `.env.example` for the full list with comments. Key variables:
 | `REDIS_URL` | Redis connection string |
 | `PUBLIC_URL` | Public base URL (e.g. `https://quiz.example.com`) |
 | `PUBLIC_HOSTNAME` | Domain for Caddy TLS (Caddy path only) |
-| `TUNNEL_TOKEN` | Cloudflare Tunnel token (Cloudflare path only) |
 | `POSTGRES_USER/PASSWORD/DB` | Postgres credentials for Docker Compose |
 
 ---

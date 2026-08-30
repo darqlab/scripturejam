@@ -273,12 +273,12 @@
   </header>
 
   {#if $hostStore.state === null || $hostStore.state === "lobby"}
-    <div class="grid grid-cols-[1fr_400px] grid-rows-[72px_1fr_92px] h-[calc(100vh-100px)]">
+    <div class="grid grid-cols-[1fr_400px] grid-rows-[65px_1fr_92px] h-[calc(100vh-100px)]">
       <!-- Left column: Header + Main -->
       <div class="col-span-1 row-span-2 flex flex-col min-h-0">
-        <!-- Header row (fixed 72px) -->
-        <div class="flex items-center justify-between px-[56px] py-2 h-[72px] flex-shrink-0">
-          <p class="text-[24px] font-semibold uppercase tracking-[.1em] text-ink-38">Waiting to begin</p>
+        <!-- Header row (fixed 65px) -->
+        <div class="flex items-center justify-between px-[56px] py-1.5 h-[65px] flex-shrink-0">
+          <p class="text-[22px] font-semibold uppercase tracking-[.1em] text-ink-38">Waiting to begin</p>
           <div class="flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1 rounded-full border border-rule text-navy">
               {$hostStore.currentIndex + 1} / {$hostStore.total} questions
@@ -295,7 +295,7 @@
             <img
               src="/api/sessions/{code}/qr.svg"
               alt="QR code to join session {code}"
-              class="max-w-[660px] max-h-[calc(100vh-444px)] w-auto h-auto rounded-[14px] border border-rule bg-paper-2 p-2 flex-shrink-0"
+              class="max-w-[660px] max-h-[calc(100vh-437px)] w-auto h-auto rounded-[14px] border border-rule bg-paper-2 p-2 flex-shrink-0"
             />
             <div class="mt-4 flex-shrink-0">
               <p class="text-[26px] text-ink-60 leading-relaxed">scan, or go to / quiz.local and enter</p>
@@ -362,15 +362,15 @@
 
 {:else if $hostStore.state === "question" && $hostStore.currentQuestion}
     {@const q = $hostStore.currentQuestion}
-    <div class="grid grid-cols-[1fr_400px] grid-rows-[72px_1fr_92px] h-[calc(100vh-100px)]">
+    <div class="grid grid-cols-[1fr_400px] grid-rows-[65px_1fr_92px] h-[calc(100vh-100px)]">
       <!-- Left column: Header + Main -->
       <div class="col-span-1 row-span-2 flex flex-col min-h-0">
-        <!-- Header row (fixed 72px) -->
-        <div class="flex items-center justify-between px-[56px] py-2 h-[72px] flex-shrink-0">
-          <p class="text-[24px] font-semibold uppercase tracking-[.1em] text-ink-38">Question {q.index + 1} of {q.total}</p>
-          <div class="flex items-center justify-center w-[72px] h-[72px] relative" style="background: conic-gradient(var(--navy) 0 {timerProgress}%, rgba(30,58,95,.15) {timerProgress}% 100%); border-radius: 50%;">
+        <!-- Header row (fixed 65px) -->
+        <div class="flex items-center justify-between px-[56px] py-1.5 h-[65px] flex-shrink-0">
+          <p class="text-[22px] font-semibold uppercase tracking-[.1em] text-ink-38">Question {q.index + 1} of {q.total}</p>
+          <div class="flex items-center justify-center w-[65px] h-[65px] relative" style="background: conic-gradient(var(--navy) 0 {timerProgress}%, rgba(30,58,95,.15) {timerProgress}% 100%); border-radius: 50%;">
             <div class="absolute inset-[9px] rounded-full bg-paper flex items-center justify-center">
-              <span class="text-[30px] font-medium text-navy">{Math.ceil(q.durationMs * (1 - timerProgress / 100) / 1000)}</span>
+              <span class="text-[28px] font-medium text-navy">{Math.ceil(q.durationMs * (1 - timerProgress / 100) / 1000)}</span>
             </div>
           </div>
         </div>
@@ -455,12 +455,12 @@
 {:else if $hostStore.state === "reveal" && $hostStore.revealData && $hostStore.currentQuestion}
     {@const r = $hostStore.revealData}
     {@const q = $hostStore.currentQuestion}
-    <div class="grid grid-cols-[1fr_400px] grid-rows-[72px_1fr_92px] h-[calc(100vh-100px)]">
+    <div class="grid grid-cols-[1fr_400px] grid-rows-[65px_1fr_92px] h-[calc(100vh-100px)]">
       <!-- Left column: Header + Main -->
       <div class="col-span-1 row-span-2 flex flex-col min-h-0">
-        <!-- Header row (fixed 72px) -->
-        <div class="flex items-center justify-between px-[56px] py-2 h-[72px] flex-shrink-0">
-          <p class="text-[24px] font-semibold uppercase tracking-[.1em] text-ink-38">Question {q.index + 1} of {q.total}</p>
+        <!-- Header row (fixed 65px) -->
+        <div class="flex items-center justify-between px-[56px] py-1.5 h-[65px] flex-shrink-0">
+          <p class="text-[22px] font-semibold uppercase tracking-[.1em] text-ink-38">Question {q.index + 1} of {q.total}</p>
           <span class="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1 rounded-full border border-[rgba(63,98,18,.4)] text-vine">
             {r.answeredCount} correct · {r.playerCount - r.answeredCount} missed
           </span>
@@ -572,10 +572,10 @@
 
   {:else if $hostStore.state === "final" && $hostStore.finalData}
     {@const f = $hostStore.finalData}
-    <div class="grid grid-cols-[1fr_400px] grid-rows-[72px_1fr_92px] h-[calc(100vh-100px)]">
+    <div class="grid grid-cols-[1fr_400px] grid-rows-[65px_1fr_92px] h-[calc(100vh-100px)]">
       <div class="col-span-1 row-span-2 flex flex-col min-h-0">
-        <div class="flex items-center justify-between px-[56px] py-2 h-[72px] flex-shrink-0">
-          <p class="text-[24px] font-semibold uppercase tracking-[.1em] text-ink-38">Final Scores</p>
+        <div class="flex items-center justify-between px-[56px] py-1.5 h-[65px] flex-shrink-0">
+          <p class="text-[22px] font-semibold uppercase tracking-[.1em] text-ink-38">Final Scores</p>
         </div>
 
         <div class="flex-1 flex flex-col items-center justify-center px-[56px] gap-8">

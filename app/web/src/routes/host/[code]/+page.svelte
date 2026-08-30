@@ -291,11 +291,11 @@
 
         <!-- Main content -->
         <div class="flex-1 flex items-center justify-center px-[56px] gap-[76px] min-h-0 overflow-hidden">
-          <div class="text-center flex flex-col items-center justify-center min-h-0">
+          <div class="text-center flex flex-col items-center justify-center min-h-0 flex-1">
             <img
               src="/api/sessions/{code}/qr.svg"
               alt="QR code to join session {code}"
-              class="max-w-[660px] max-h-[660px] w-[80vh] h-[80vh] rounded-[14px] border border-rule bg-paper-2 p-2 flex-shrink-0"
+              class="max-w-[660px] max-h-[660px] w-[50vh] h-[50vh] rounded-[14px] border border-rule bg-paper-2 p-2 flex-shrink-0"
             />
             <div class="mt-4 flex-shrink-0">
               <p class="text-[26px] text-ink-60 leading-relaxed">scan, or go to / quiz.local and enter</p>

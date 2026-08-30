@@ -187,17 +187,19 @@
           <button
             type="button"
             onclick={() => (showAvatarPicker = true)}
-            class="relative"
+            class="w-[104px] h-[104px] rounded-full border-2 border-transparent hover:border-navy/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2 focus-visible:ring-offset-paper transition-colors cursor-pointer"
             aria-label="Choose avatar"
           >
             {#if avatarId}
               <img
                 src="/api/avatars/{avatarId}/monogram.svg?name={encodeURIComponent(avatarDisplayName || avatarId)}"
                 alt=""
-                class="w-[104px] h-[104px] rounded-full border border-[rgba(30,58,95,.2)] bg-navy-8"
+                class="w-full h-full rounded-full border border-[rgba(30,58,95,.2)] bg-navy-8"
               />
             {:else}
-              <div class="w-[104px] h-[104px] rounded-full bg-navy-8 border border-[rgba(30,58,95,.2)]"></div>
+              <div class="w-full h-full rounded-full bg-navy-8 border border-[rgba(30,58,95,.2)] flex items-center justify-center">
+                <span class="text-ink-38 text-[24px]">+</span>
+              </div>
             {/if}
           </button>
           <p class="text-[19px] text-ink-60">tap to change</p>

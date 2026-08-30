@@ -3,6 +3,16 @@
 #   With Cloudflare Tunnel:  docker compose -f docker-compose.yml -f compose.cloudflare.yml up -d
 #   With Caddy (direct):     docker compose -f docker-compose.yml -f compose.caddy.yml up -d
 #   Local/dev (port 3000):   docker compose up -d
+#
+# Postgres's password is read from a file via Docker secrets (below), not a plaintext env var —
+# generate it first:
+#   mkdir -p secrets && openssl rand -hex 24 > secrets/postgres_password.txt && chmod 600 secrets/postgres_password.txt
+# DATABASE_URL in .env still needs the same value embedded (the app reads a connection string,
+# not a secret file) — this only keeps the password out of the postgres container's own env/logs.
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
 
 services:
   app:
@@ -50,8 +60,10 @@ services:
     env_file: .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       POSTGRES_DB: ${POSTGRES_DB}
+    secrets:
+      - postgres_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

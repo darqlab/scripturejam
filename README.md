@@ -47,9 +47,11 @@ Players join at `http://<host-ip>:4000/j/<code>` or by scanning the QR code show
 ```bash
 git clone <repo-url> && cd scripturejam/deploy
 cp ../.env.example .env
+mkdir -p secrets && openssl rand -hex 24 > secrets/postgres_password.txt && chmod 600 secrets/postgres_password.txt
 ```
 
-Edit `.env` — fill in `IP_HASH_SECRET`, Postgres password, and `PUBLIC_HOSTNAME=quiz.example.com`.
+Edit `.env` — fill in `IP_HASH_SECRET`, `PUBLIC_HOSTNAME=quiz.example.com`, and `DATABASE_URL`
+using the same password you just generated into `secrets/postgres_password.txt`.
 
 ```bash
 docker compose -f docker-compose.yml -f compose.caddy.yml up -d

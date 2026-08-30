@@ -18,6 +18,9 @@ __pycache__/
 .env
 .env.local
 
+# Generated secrets (deploy/secrets/postgres_password.txt, host-generated, never committed)
+secrets/
+
 # Docker
 *.log
 

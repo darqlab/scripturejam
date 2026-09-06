@@ -76,90 +76,82 @@
   }
 </script>
 
-<div class="min-h-screen bg-paper flex flex-col">
-  <header class="bg-paper-2 border-b border-rule px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
-    <button
-      type="button"
-      onclick={onBack}
-      class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-[6px] hover:bg-[rgba(35,32,27,.05)] transition-colors text-ink font-medium"
-      aria-label="Back"
-    >
+<div class="picker">
+  <header class="picker-header">
+    <button type="button" onclick={onBack} class="back" aria-label="Back">
       ← Back
     </button>
-    <h2 class="text-lg font-semibold flex-1 text-center text-ink">Choose your avatar</h2>
+    <h2>Choose your avatar</h2>
     {#if !fallbackMode && filtered.length > 0}
-      <button
-        type="button"
-        onclick={surpriseMe}
-        class="min-h-[44px] px-3 bg-navy text-paper rounded-[6px] text-sm font-medium hover:bg-navy/90 transition-colors"
-      >
+      <button type="button" onclick={surpriseMe} class="surprise">
         Surprise me
       </button>
     {/if}
   </header>
 
   {#if loading}
-    <div class="flex-1 flex items-center justify-center">
-      <p class="text-ink-60 animate-pulse">Loading avatars…</p>
+    <div class="center-fill">
+      <p class="muted pulse">Loading avatars…</p>
     </div>
   {:else if fallbackMode}
-    <div class="flex-1 flex flex-col items-center justify-center p-6 gap-4">
-      <p class="text-ink-60 text-center">Type any name to use as your avatar</p>
+    <div class="center-fill fallback">
+      <p class="muted">Type any name to use as your avatar</p>
       <input
         type="text"
         bind:value={fallbackText}
         placeholder="Avatar name…"
-        class="w-full max-w-sm border border-rule rounded-[6px] px-3 py-2 min-h-[44px] text-base bg-paper-2 text-ink"
+        class="text-input"
         maxlength="32"
         autocomplete="off"
       />
       {#if fallbackText.trim()}
-        <div class="flex flex-col items-center gap-2">
+        <div class="fallback-preview">
           <img
             src="/api/avatars/{encodeURIComponent(fallbackText.trim())}/monogram.svg?name={encodeURIComponent(fallbackText.trim())}"
             alt={fallbackText.trim()}
-            class="w-16 h-16 rounded-full"
           />
-          <span class="text-sm text-ink-60">{fallbackText.trim()}</span>
+          <span class="muted">{fallbackText.trim()}</span>
         </div>
       {/if}
       <button
         type="button"
         onclick={() => onSelect(fallbackText.trim())}
         disabled={!fallbackText.trim()}
-        class="w-full max-w-sm bg-navy text-paper rounded-[6px] px-4 py-3 min-h-[44px] font-semibold disabled:opacity-50 hover:bg-navy/90 transition-colors"
+        class="use-name-btn"
       >
         Use this name
       </button>
     </div>
   {:else}
-    <div class="p-4 space-y-3 bg-paper-2 border-b border-rule">
+    <div class="filters">
       <input
         type="search"
         bind:value={search}
         placeholder="Search avatars…"
-        class="w-full border border-rule rounded-[6px] px-3 py-2 min-h-[44px] text-base bg-paper-2 text-ink"
+        class="text-input"
         autocomplete="off"
       />
-      <div class="flex gap-2 flex-wrap">
+      <div class="chips">
         {#if mode !== "group"}
           {#each categories as cat}
             <button
               type="button"
               onclick={() => (categoryFilter = cat.value)}
-              class="px-3 py-1 rounded-full text-sm font-medium min-h-[36px] border border-rule transition-colors {categoryFilter === cat.value ? 'bg-navy text-paper border-navy' : 'bg-paper-2 text-ink hover:bg-[rgba(35,32,27,.05)]'}"
+              class="chip"
+              class:is-active={categoryFilter === cat.value}
             >
               {cat.label}
             </button>
           {/each}
         {/if}
       </div>
-      <div class="flex gap-2 flex-wrap">
+      <div class="chips">
         {#each testaments as t}
           <button
             type="button"
             onclick={() => (testamentFilter = t.value)}
-            class="px-3 py-1 rounded-full text-sm font-medium min-h-[36px] border border-rule transition-colors {testamentFilter === t.value ? 'bg-vine text-paper border-vine' : 'bg-paper-2 text-ink hover:bg-[rgba(35,32,27,.05)]'}"
+            class="chip"
+            class:is-active={testamentFilter === t.value}
           >
             {t.label}
           </button>
@@ -168,25 +160,20 @@
     </div>
 
     {#if filtered.length === 0}
-      <div class="flex-1 flex items-center justify-center p-6">
-        <p class="text-ink-60">No avatars match your filters</p>
+      <div class="center-fill">
+        <p class="muted">No avatars match your filters</p>
       </div>
     {:else}
-      <div class="grid grid-cols-2 gap-3 p-4 overflow-y-auto">
+      <div class="avatar-grid">
         {#each filtered as avatar (avatar.id)}
-          <button
-            type="button"
-            onclick={() => onSelect(avatar.id)}
-            class="flex flex-col items-center gap-2 p-3 bg-paper-2 rounded-[12px] border border-rule hover:border-navy hover:bg-[rgba(35,32,27,.05)] transition-colors min-h-[100px] active:scale-[.98]"
-          >
+          <button type="button" onclick={() => onSelect(avatar.id)} class="avatar-card">
             <img
               src="/api/avatars/{avatar.id}/monogram.svg?name={encodeURIComponent(avatar.displayName)}"
               alt={avatar.displayName}
-              class="w-[52px] h-[52px] rounded-full flex-shrink-0 border border-[rgba(30,58,95,.2)] bg-navy-8"
             />
-            <span class="text-[19px] font-medium text-center leading-[1.2] text-ink">{avatar.displayName}</span>
+            <span class="name">{avatar.displayName}</span>
             {#if avatar.disambiguation}
-              <span class="text-[15px] text-ink-60 text-center leading-tight">{avatar.disambiguation}</span>
+              <span class="disambig">{avatar.disambiguation}</span>
             {/if}
           </button>
         {/each}
@@ -194,3 +181,219 @@
     {/if}
   {/if}
 </div>
+
+<style>
+  /* Full-bleed by design: the player side fills the viewport. */
+  .picker {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    color: var(--ink);
+    border-top: 6px solid var(--gold);
+  }
+
+  .picker-header {
+    background: var(--white);
+    border-bottom: 1px solid rgba(42, 26, 94, 0.12);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .picker-header h2 {
+    flex: 1;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--ink);
+  }
+  .back {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0 12px;
+    background: transparent;
+    color: var(--ink);
+    font-weight: 600;
+    border: 0;
+    transition: background 0.16s ease;
+  }
+  .back:hover {
+    background: rgba(42, 26, 94, 0.06);
+  }
+  .surprise {
+    min-height: 44px;
+    padding: 0 14px;
+    background: var(--grad-a);
+    color: #fff;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    border: 0;
+    transition: background 0.16s ease;
+  }
+  .surprise:hover {
+    background: var(--grad-b);
+  }
+
+  .center-fill {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+  }
+  .fallback {
+    padding: 24px;
+  }
+
+  .muted {
+    color: var(--ink-soft);
+  }
+  .pulse {
+    animation: pulseMsg 1.6s ease-in-out infinite;
+  }
+  @keyframes pulseMsg {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
+  }
+
+  .text-input {
+    width: 100%;
+    max-width: 360px;
+    min-height: 44px;
+    border: 2px solid rgba(42, 26, 94, 0.16);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 16px;
+    background: var(--white);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+  .text-input:focus {
+    border-color: var(--grad-a);
+    box-shadow: 0 0 0 4px rgba(123, 47, 247, 0.15);
+  }
+
+  .fallback-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .fallback-preview img {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+  }
+
+  .use-name-btn {
+    width: 100%;
+    max-width: 360px;
+    min-height: 44px;
+    border: 0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    background: var(--grad-a);
+    color: #fff;
+    font-weight: 700;
+    transition: background 0.16s ease;
+  }
+  .use-name-btn:hover:not(:disabled) {
+    background: var(--grad-b);
+  }
+  .use-name-btn:disabled {
+    opacity: 0.5;
+  }
+
+  .filters {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-bottom: 1px solid rgba(42, 26, 94, 0.12);
+    background: rgba(42, 26, 94, 0.02);
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    padding: 6px 14px;
+    min-height: 36px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    border: 2px solid rgba(42, 26, 94, 0.16);
+    background: var(--white);
+    color: var(--ink);
+    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  }
+  .chip:hover {
+    background: rgba(42, 26, 94, 0.06);
+  }
+  .chip.is-active {
+    background: var(--grad-a);
+    border-color: var(--grad-a);
+    color: #fff;
+  }
+
+  .avatar-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 16px;
+    overflow-y: auto;
+  }
+  .avatar-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px;
+    min-height: 100px;
+    background: var(--white);
+    border: 2px solid rgba(42, 26, 94, 0.12);
+    border-radius: 16px;
+    transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+  }
+  .avatar-card:hover {
+    border-color: var(--grad-a);
+    box-shadow: 0 8px 20px rgba(42, 26, 94, 0.12);
+  }
+  .avatar-card:active {
+    transform: scale(0.98);
+  }
+  .avatar-card img {
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    flex-shrink: 0;
+    background: rgba(42, 26, 94, 0.06);
+  }
+  .avatar-card .name {
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+  .avatar-card .disambig {
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+    line-height: 1.2;
+  }
+</style>

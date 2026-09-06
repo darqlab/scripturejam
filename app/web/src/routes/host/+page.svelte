@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { storageSet } from "$lib/storage.js";
+  import Stage from "$lib/components/Stage.svelte";
   import {
     BIBLE_BOOKS,
     type Translation,
@@ -125,76 +126,55 @@
   }
 </script>
 
-<div class="min-h-screen bg-paper p-6">
-  <div class="max-w-4xl mx-auto">
-    <div class="mb-10">
-      <p class="text-sm font-medium uppercase tracking-[.28em] text-ink-38">scripturejam</p>
-      <h1 class="text-[62px] font-semibold tracking-[-.02em] leading-tight mt-2">Create a new quiz session</h1>
+<Stage confetti={false}>
+  <div class="main">
+    <div class="header">
+      <p class="eyebrow">ScriptureJam</p>
+      <h1>Create a new quiz session</h1>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8" style="grid-template-columns: 380px 1fr;">
-      <div class="space-y-6">
-        <fieldset class="bg-paper-2 border border-rule rounded-[10px] p-5">
-          <legend class="text-[24px] font-medium text-navy border-b border-rule pb-2 mb-3">Bible translation</legend>
-          <div class="space-y-3">
+    <div class="layout">
+      <div class="left-col">
+        <fieldset class="card panel">
+          <legend>Bible translation</legend>
+          <div class="options">
             {#each ["KJV", "WEB", "ASV"] as t}
-              <label class="flex items-center gap-3 cursor-pointer min-h-[44px]">
-                <input
-                  type="radio"
-                  bind:group={translation}
-                  value={t}
-                  class="w-[22px] h-[22px] appearance-none border-[1px] border-[rgba(35,32,27,.32)] rounded-full checked:border-[6px] checked:border-navy transition-colors flex-shrink-0"
-                />
-                <span class="text-[26px] font-medium text-ink">{t}</span>
+              <label class="radio-row">
+                <input type="radio" bind:group={translation} value={t} />
+                <span class="opt-title">{t}</span>
               </label>
             {/each}
           </div>
         </fieldset>
 
-        <fieldset class="bg-paper-2 border border-rule rounded-[10px] p-5">
-          <legend class="text-[24px] font-medium text-navy border-b border-rule pb-2 mb-3">Play mode</legend>
-          <div class="space-y-3">
-            <label class="flex items-center gap-3 cursor-pointer min-h-[44px]">
-              <input
-                type="radio"
-                bind:group={mode}
-                value="individual"
-                class="w-[22px] h-[22px] appearance-none border-[1px] border-[rgba(35,32,27,.32)] rounded-full checked:border-[6px] checked:border-navy transition-colors flex-shrink-0"
-              />
+        <fieldset class="card panel">
+          <legend>Play mode</legend>
+          <div class="options">
+            <label class="radio-row">
+              <input type="radio" bind:group={mode} value="individual" />
               <div>
-                <span class="text-[26px] font-medium block text-ink">Individual</span>
-                <span class="text-[19px] text-ink-60 block">Each player picks their own answer</span>
+                <span class="opt-title">Individual</span>
+                <span class="opt-sub">Each player picks their own answer</span>
               </div>
             </label>
-            <label class="flex items-center gap-3 cursor-pointer min-h-[44px]">
-              <input
-                type="radio"
-                bind:group={mode}
-                value="group"
-                class="w-[22px] h-[22px] appearance-none border-[1px] border-[rgba(35,32,27,.32)] rounded-full checked:border-[6px] checked:border-navy transition-colors flex-shrink-0"
-              />
+            <label class="radio-row">
+              <input type="radio" bind:group={mode} value="group" />
               <div>
-                <span class="text-[26px] font-medium block text-ink">Group / teams</span>
-                <span class="text-[19px] text-ink-60 block">Teams discuss, one device per group</span>
+                <span class="opt-title">Group / teams</span>
+                <span class="opt-sub">Teams discuss, one device per group</span>
               </div>
             </label>
           </div>
         </fieldset>
       </div>
 
-      <div class="bg-paper-2 border border-rule rounded-[10px] overflow-hidden">
-        <div class="border-b border-rule px-5 py-3">
-          <span class="text-[24px] font-medium text-navy">Generate from a book</span>
-        </div>
+      <div class="card panel generate-panel">
+        <div class="panel-title">Generate from a book</div>
 
-        <div class="p-5 space-y-4">
-          <div>
-            <label for="generate-book" class="block text-sm font-medium text-ink-38 mb-1">Bible book</label>
-            <select
-              id="generate-book"
-              bind:value={generateBook}
-              class="w-full border border-rule rounded-[6px] px-3 py-2 min-h-[44px] text-sm bg-paper-2 text-ink"
-            >
+        <div class="panel-body">
+          <div class="field">
+            <label for="generate-book">Bible book</label>
+            <select id="generate-book" bind:value={generateBook}>
               <option value="" disabled selected>Choose a book…</option>
               {#each BIBLE_BOOKS as book}
                 <option value={book}>{book}</option>
@@ -202,10 +182,10 @@
             </select>
           </div>
 
-          <div class="flex flex-wrap gap-2 items-end">
-            <div class="w-[150px]">
-              <label for="generate-chapter-start" class="block text-xs text-ink-60 mb-1">
-                From chapter <span class="text-ink-38">(opt.)</span>
+          <div class="chapter-row">
+            <div class="field narrow">
+              <label for="generate-chapter-start">
+                From chapter <span class="opt">(opt.)</span>
               </label>
               <input
                 id="generate-chapter-start"
@@ -213,12 +193,11 @@
                 min="1"
                 bind:value={generateChapterStart}
                 placeholder="e.g. 1"
-                class="w-full border border-rule rounded-[6px] px-3 py-2 text-sm min-h-[40px] bg-paper-2 text-ink"
               />
             </div>
-            <div class="w-[150px]">
-              <label for="generate-chapter-end" class="block text-xs text-ink-60 mb-1">
-                To chapter <span class="text-ink-38">(opt.)</span>
+            <div class="field narrow">
+              <label for="generate-chapter-end">
+                To chapter <span class="opt">(opt.)</span>
               </label>
               <input
                 id="generate-chapter-end"
@@ -226,87 +205,317 @@
                 min={generateChapterStart ?? 1}
                 bind:value={generateChapterEnd}
                 placeholder="e.g. 5"
-                class="w-full border border-rule rounded-[6px] px-3 py-2 text-sm min-h-[40px] bg-paper-2 text-ink"
               />
             </div>
           </div>
-          <p class="text-xs text-ink-60">
+          <p class="helper">
             Leave both blank to draw from the whole book — e.g. Genesis chapter 1 to chapter 5
             restricts every generated question to that range.
           </p>
 
-          <div>
-            <label for="generate-count" class="block text-sm font-medium text-ink-38 mb-1">
-              Number of questions
-            </label>
+          <div class="field">
+            <label for="generate-count">Number of questions</label>
             <input
               id="generate-count"
               type="number"
               min="5"
               max="30"
               bind:value={generateCount}
-              class="w-[210px] border border-rule rounded-[6px] px-3 py-2 min-h-[44px] text-sm bg-paper-2 text-ink"
+              class="count-input"
             />
           </div>
 
-          <fieldset>
-            <legend class="text-xs font-medium text-ink-60 mb-1">Difficulty</legend>
-            <div class="flex flex-wrap gap-4">
+          <fieldset class="sub-fieldset">
+            <legend>Difficulty</legend>
+            <div class="chip-row">
               {#each [["mixed", "Mixed"], ...Object.entries(DIFFICULTY_LABELS)] as [val, lbl]}
-                <label class="flex items-center gap-2 cursor-pointer min-h-[36px]">
-                  <input
-                    type="radio"
-                    bind:group={generateDifficulty}
-                    value={val}
-                    class="w-4 h-4 appearance-none border-[1px] border-[rgba(35,32,27,.32)] rounded-full checked:border-[6px] checked:border-navy transition-colors flex-shrink-0"
-                  />
-                  <span class="text-sm text-ink">{lbl}</span>
+                <label class="chip-radio">
+                  <input type="radio" bind:group={generateDifficulty} value={val} />
+                  <span>{lbl}</span>
                 </label>
               {/each}
             </div>
           </fieldset>
 
-          <fieldset>
-            <legend class="text-xs font-medium text-ink-60 mb-1">Age band</legend>
-            <div class="flex gap-4">
+          <fieldset class="sub-fieldset">
+            <legend>Age band</legend>
+            <div class="chip-row">
               {#each [["all-ages", "All ages"], ["youth", "Youth"]] as [val, lbl]}
-                <label class="flex items-center gap-2 cursor-pointer min-h-[36px]">
-                  <input
-                    type="radio"
-                    bind:group={generateAgeBand}
-                    value={val}
-                    class="w-4 h-4 appearance-none border-[1px] border-[rgba(35,32,27,.32)] rounded-full checked:border-[6px] checked:border-navy transition-colors flex-shrink-0"
-                  />
-                  <span class="text-sm text-ink">{lbl}</span>
+                <label class="chip-radio">
+                  <input type="radio" bind:group={generateAgeBand} value={val} />
+                  <span>{lbl}</span>
                 </label>
               {/each}
             </div>
           </fieldset>
 
-          <p class="text-[20px] text-ink-60">
+          <p class="helper">
             Questions are generated live by AI when you create the session — this can take a few seconds.
           </p>
           {#if generateError}
-            <p class="text-red-600 text-xs font-medium" role="alert">{generateError}</p>
+            <p class="error" role="alert">{generateError}</p>
           {/if}
           {#if generating}
-            <p class="text-xs text-navy font-medium">Generating questions…</p>
+            <p class="generating">Generating questions…</p>
           {/if}
         </div>
       </div>
     </div>
 
     {#if createError}
-      <p class="text-red-600 text-sm font-medium mb-4" role="alert">{createError}</p>
+      <p class="error create-error" role="alert">{createError}</p>
     {/if}
 
-    <button
-      type="button"
-      onclick={createSession}
-      disabled={!canCreate}
-      class="w-full sm:w-auto bg-navy text-paper px-[50px] py-[19px] rounded-[6px] font-bold text-[30px] min-h-[52px] disabled:opacity-40 transition-opacity"
-    >
+    <button type="button" onclick={createSession} disabled={!canCreate} class="create-btn">
       {creating ? "Creating session…" : generating ? "Generating questions…" : "Create session →"}
     </button>
   </div>
-</div>
+</Stage>
+
+<style>
+  .main {
+    flex: 1;
+    padding: 24px 24px 48px;
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
+  }
+
+  .header {
+    margin-bottom: 32px;
+  }
+  .eyebrow {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0;
+  }
+  .header h1 {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 10px 0 0;
+    color: #fff;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 800px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .panel {
+    border: 0;
+    padding: 20px;
+    margin: 0;
+  }
+  /* A <legend> is laid out ON the fieldset's border box by default, so on a
+     white card it renders half outside and reads as clipped text. Floating it
+     takes it out of that special layout and back into normal flow. */
+  .panel legend {
+    float: left;
+  }
+  .panel legend + * {
+    clear: both;
+  }
+  .panel legend,
+  .panel-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--grad-a);
+    border-bottom: 1px solid rgba(42, 26, 94, 0.12);
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    width: 100%;
+  }
+  .generate-panel {
+    padding: 0;
+    overflow: hidden;
+  }
+  .generate-panel .panel-title {
+    padding: 14px 20px;
+    margin: 0;
+    border-bottom: 1px solid rgba(42, 26, 94, 0.12);
+  }
+  .panel-body {
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .radio-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    min-height: 44px;
+  }
+  .radio-row input[type="radio"] {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    accent-color: var(--grad-a);
+  }
+  .opt-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    display: block;
+  }
+  .opt-sub {
+    font-size: 13px;
+    color: var(--ink-soft);
+    display: block;
+  }
+
+  label,
+  legend {
+    color: var(--ink-soft);
+  }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field select,
+  .field input {
+    width: 100%;
+    min-height: 44px;
+    border: 2px solid rgba(42, 26, 94, 0.16);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 15px;
+    background: var(--white);
+    color: var(--ink);
+    outline: none;
+  }
+  .field select:focus,
+  .field input:focus {
+    border-color: var(--grad-a);
+    box-shadow: 0 0 0 4px rgba(123, 47, 247, 0.15);
+  }
+  .count-input {
+    max-width: 200px;
+  }
+
+  .chapter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .field.narrow {
+    width: 150px;
+  }
+  .field .opt {
+    color: var(--ink-soft);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .helper {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .sub-fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .sub-fieldset legend {
+    float: left;
+    width: 100%;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    padding: 0;
+    border: 0;
+  }
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .chip-radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    min-height: 36px;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .chip-radio input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--grad-a);
+  }
+
+  .error {
+    color: var(--color-option-a);
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .create-error {
+    margin-bottom: 16px;
+  }
+  .generating {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--grad-a);
+    margin: 0;
+  }
+
+  .create-btn {
+    width: 100%;
+    max-width: 340px;
+    padding: 18px 40px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--grad-a);
+    color: #fff;
+    font-weight: 800;
+    font-size: 22px;
+    box-shadow: 0 8px 20px rgba(123, 47, 247, 0.35);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+  }
+  .create-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px rgba(123, 47, 247, 0.42);
+    background: var(--grad-b);
+  }
+  .create-btn:disabled {
+    opacity: 0.4;
+  }
+</style>

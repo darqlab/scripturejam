@@ -2,6 +2,7 @@ import { getIo } from "../socket/io.js";
 import { getSession, saveSession } from "../session/store.js";
 import { canTransition } from "../session/state-machine.js";
 import { computeScore } from "../scoring/index.js";
+import { tallyOptionCounts } from "./tally.js";
 import { getContent } from "../content/loader.js";
 import { persistResults } from "../db/persist.js";
 import { config } from "../config.js";
@@ -135,12 +136,36 @@ export async function revealQuestion(code: string): Promise<void> {
   const io = getIo();
   const answeredCount = Object.values(session.players).filter((p) => p.answers[questionId]).length;
 
+  const optionCounts = tallyOptionCounts(
+    Object.values(session.players),
+    questionId,
+    question.options.map((o) => o.id),
+  );
+
+  // Top-5 standings with the score each player entered this question on, so the
+  // host reveal can animate before -> after and re-sort. `perQuestionTop5` cannot
+  // serve this: it lists only players who answered CORRECTLY, and carries the
+  // points awarded without the running total they apply to.
+  const standings = ranked.slice(0, 5).map((p) => {
+    const awarded = p.answers[questionId]?.awarded ?? 0;
+    return {
+      playerId: p.id,
+      nickname: p.nickname,
+      avatarId: p.avatarId,
+      score: p.score,
+      previousScore: p.score - awarded,
+      awarded,
+    };
+  });
+
   io.to(`host:${code}`).emit("REVEAL", {
     questionId: question.id,
     correctOptionId: question.correctOptionId,
     references: question.references,
     perQuestionTop5: perQTop.slice(0, 5),
     answeredCount,
+    optionCounts,
+    standings,
     playerCount: ranked.length,
     verseText,
     translation: session.translation,

@@ -75,4 +75,15 @@ if (existsSync(publicDir)) {
 await app.listen({ port: config.PORT, host: "0.0.0.0" });
 logger.info("Server listening", { port: config.PORT, env: config.NODE_ENV });
 
+if (config.RATE_LIMIT_ENABLED) {
+  logger.info("Rate limiting enabled", {
+    perIpPerHour: config.RATE_LIMIT_PER_IP_PER_HOUR,
+    globalPerHour: config.RATE_LIMIT_GLOBAL_PER_HOUR,
+  });
+} else {
+  logger.warn(
+    "Rate limiting disabled (RATE_LIMIT_ENABLED=false) — only safe for LAN-only/local deployments, not internet-facing ones (DEC-009)",
+  );
+}
+
 attachSocketServer(app.server);

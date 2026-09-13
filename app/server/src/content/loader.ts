@@ -30,6 +30,36 @@ export function getContent(): ContentStore {
   return store;
 }
 
+/**
+ * The bundled bible YAMLs (KJV/WEB/ASV, from a shared public-domain source)
+ * key numbered books with Roman numerals ("I Kings", "II Samuel") and name
+ * Revelation "Revelation of John". Every other book reference in this app —
+ * question packs, generated content (generate.ts's prompt explicitly asks
+ * for "the KJV canonical English form, e.g. '1 Kings' not 'I Kgs'") — uses
+ * Arabic numerals and short names. Left unreconciled, a question on any
+ * numbered book or Revelation looked up an index key that didn't exist and
+ * silently rendered no verse text at all. Remap once at load time so every
+ * consumer can just use the app's own convention.
+ */
+function normalizeBibleBookKey(book: string): string {
+  const romanToArabic: Record<string, string> = { I: "1", II: "2", III: "3" };
+  const romanMatch = /^(I{1,3})\s+(.+)$/.exec(book);
+  if (romanMatch) {
+    const [, roman, rest] = romanMatch;
+    return `${romanToArabic[roman]} ${rest}`;
+  }
+  if (book === "Revelation of John") return "Revelation";
+  return book;
+}
+
+function normalizeBibleIndexKeys(index: BibleIndex): BibleIndex {
+  const normalized: BibleIndex = {};
+  for (const [book, chapters] of Object.entries(index)) {
+    normalized[normalizeBibleBookKey(book)] = chapters;
+  }
+  return normalized;
+}
+
 export function loadContent() {
   logger.info("Loading content from disk");
 
@@ -68,7 +98,8 @@ export function loadContent() {
   for (const translation of ["KJV", "WEB", "ASV"] as Translation[]) {
     const path = join(CONTENT_DIR, `bible/${translation}.yaml`);
     try {
-      bible.set(translation, yaml.load(readFileSync(path, "utf8")) as BibleIndex);
+      const raw = yaml.load(readFileSync(path, "utf8")) as BibleIndex;
+      bible.set(translation, normalizeBibleIndexKeys(raw));
     } catch {
       logger.warn(`Bible text not found for ${translation} — verse text will be empty`);
     }

@@ -536,10 +536,11 @@
     z-index: 10;
     min-height: 0;
   }
-  /* The reveal layout is short enough now (no more tall single-column stack)
-     that centering it vertically left a large empty band under the topbar —
-     sit it near the top instead. */
-  .main:has(.reveal-layout) {
+  /* Question and reveal cards are short enough (no more tall single-column
+     reveal stack) that centering them vertically left a large empty band
+     under the topbar — sit them near the top instead. Targets both states
+     via `.qtext` (lobby/final don't have one) without a wrapper class. */
+  .main:has(.qtext) {
     justify-content: flex-start;
     padding-top: 36px;
   }

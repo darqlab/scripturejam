@@ -394,49 +394,58 @@
     <canvas bind:this={burstCanvas} class="burst" aria-hidden="true"></canvas>
 
     <div class="main">
-      <div class="hud">
-        <h4>Top 5</h4>
-        {#each reveal.standingsOrder as s, i (s.playerId)}
-          <div class="row" animate:flip={{ duration: REORDER_MS }}>
-            <span class="rank">{i + 1}</span>
-            <img
-              src="/api/avatars/{s.avatarId}/monogram.svg?name={encodeURIComponent(s.nickname)}"
-              alt=""
+      <div class="reveal-layout">
+        <div class="reveal-main-col">
+          <div class="card">
+            <h2 class="qtext">{q.prompt}</h2>
+            <AnswerGrid
+              options={q.options}
+              variant="host"
+              counts={r.optionCounts}
+              countsShown={reveal.countsShown}
+              correctOptionId={reveal.revealedCorrectId}
             />
-            <span class="name">{s.nickname}</span>
-            <span class="score">{fmt(reveal.scoresShown[s.playerId] ?? s.previousScore)}</span>
-            {#if reveal.showGains && s.awarded > 0}
-              <span class="gain">+{s.awarded}</span>
+          </div>
+
+          <!-- Its own card, outside/below the answer card — kept in the DOM
+               but hidden until stage 4, so this column does not jump when
+               the verse arrives. -->
+          <div class="scripture-card" class:is-shown={reveal.showVerse} aria-live="polite">
+            <p class="ref">
+              {r.references
+                .map(
+                  (ref) =>
+                    `${ref.book} ${ref.chapter}:${ref.verse_start}${ref.verse_end && ref.verse_end !== ref.verse_start ? "–" + ref.verse_end : ""}`,
+                )
+                .join("; ")} · {r.translation}
+            </p>
+            {#if r.verseText}
+              <p class="verse">{r.verseText}</p>
             {/if}
           </div>
-        {/each}
-        <p class="answered">{answeredCount} of {playerCount} answered</p>
-      </div>
+        </div>
 
-      <div class="card">
-        <h2 class="qtext">{q.prompt}</h2>
-        <AnswerGrid
-          options={q.options}
-          variant="host"
-          counts={r.optionCounts}
-          countsShown={reveal.countsShown}
-          correctOptionId={reveal.revealedCorrectId}
-        />
-
-        <!-- Kept in the DOM but hidden until stage 4, so the card does not
-             jump when the verse arrives. -->
-        <div class="scripture-card" class:is-shown={reveal.showVerse} aria-live="polite">
-          <p class="ref">
-            {r.references
-              .map(
-                (ref) =>
-                  `${ref.book} ${ref.chapter}:${ref.verse_start}${ref.verse_end && ref.verse_end !== ref.verse_start ? "–" + ref.verse_end : ""}`,
-              )
-              .join("; ")} · {r.translation}
-          </p>
-          {#if r.verseText}
-            <p class="verse">{r.verseText}</p>
-          {/if}
+        <!-- Standings live beside the card, not below it — keeps the reveal
+             from growing tall enough to need scrolling or run under the dock. -->
+        <div class="side-col">
+          <div class="hud reveal-hud">
+            <h4>Top 5</h4>
+            {#each reveal.standingsOrder as s, i (s.playerId)}
+              <div class="row" animate:flip={{ duration: REORDER_MS }}>
+                <span class="rank">{i + 1}</span>
+                <img
+                  src="/api/avatars/{s.avatarId}/monogram.svg?name={encodeURIComponent(s.nickname)}"
+                  alt=""
+                />
+                <span class="name">{s.nickname}</span>
+                <span class="score">{fmt(reveal.scoresShown[s.playerId] ?? s.previousScore)}</span>
+                {#if reveal.showGains && s.awarded > 0}
+                  <span class="gain">+{s.awarded}</span>
+                {/if}
+              </div>
+            {/each}
+            <p class="answered">{answeredCount} of {playerCount} answered</p>
+          </div>
         </div>
       </div>
     </div>
@@ -514,6 +523,13 @@
     z-index: 10;
     min-height: 0;
   }
+  /* The reveal layout is short enough now (no more tall single-column stack)
+     that centering it vertically left a large empty band under the topbar —
+     sit it near the top instead. */
+  .main:has(.reveal-layout) {
+    justify-content: flex-start;
+    padding-top: 36px;
+  }
 
   /* White content card */
   .card {
@@ -523,7 +539,7 @@
     padding: 34px 40px;
     box-shadow: 0 26px 70px rgba(42, 26, 94, 0.28);
     width: 100%;
-    max-width: 1120px;
+    max-width: 1320px;
     text-align: center;
   }
 
@@ -699,14 +715,48 @@
     pointer-events: none;
     z-index: 50;
   }
+  /* Card + standings/verse side by side, so the reveal uses the screen's
+     width instead of growing tall enough to need scrolling or to run under
+     the fixed dock. */
+  .reveal-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+    /* Fills the full width of .main's padded content box, so the standings
+       column sits flush against the same right margin the dock uses
+       (right: 40px) instead of floating in a centered, capped-width row. */
+    width: 100%;
+  }
+  .reveal-main-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .reveal-layout .card {
+    max-width: none;
+  }
+  .side-col {
+    flex: 0 0 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  /* `.hud` is normally a floating overlay (question/lobby); here it is a
+     normal flex child stacked above the verse instead. */
+  .side-col .reveal-hud {
+    position: static;
+    min-width: 0;
+    width: 100%;
+  }
   .scripture-card {
     background: linear-gradient(135deg, #fff, #fff8e0);
     border: 0;
     border-top: 6px solid var(--gold);
     border-radius: 24px;
-    padding: 40px 48px;
+    padding: 26px 36px;
     box-shadow: 0 22px 60px rgba(42, 26, 94, 0.24);
-    margin-top: 28px;
+    margin-top: 22px;
     text-align: center;
     /* Hidden, not absent: keeping it in flow stops the card resizing when the
        verse arrives at stage 4. */
@@ -746,8 +796,9 @@
   .scripture-card .verse {
     font-family: "EB Garamond", Georgia, serif;
     font-style: italic;
-    font-size: clamp(26px, 3.6vw, 44px);
-    line-height: 1.3;
+    /* Sized for the ~360-400px side column, not the old full-width card. */
+    font-size: clamp(17px, 1.6vw, 22px);
+    line-height: 1.4;
     color: var(--ink);
     margin-top: 14px;
     white-space: pre-line;
@@ -813,9 +864,10 @@
      subtle emphasis on top. */
   .dock {
     position: fixed;
-    left: 50%;
+    /* Right-aligned, under the standings/verse column, rather than centered
+       over the question card or the verse text. */
+    right: 40px;
     bottom: 16px;
-    transform: translateX(-50%);
     z-index: 40;
     display: flex;
     align-items: center;
@@ -878,5 +930,7 @@
   @media (max-width: 900px) {
     .lobby-split { flex-direction: column; }
     .hud { position: static; min-width: 0; margin-bottom: 16px; }
+    .reveal-layout { flex-direction: column; }
+    .side-col { max-width: none; }
   }
 </style>

@@ -556,6 +556,13 @@
     max-width: 1320px;
     text-align: center;
   }
+  /* The floating HUD (.hud, question/lobby state) reserves a fixed strip on
+     the right; a direct-child card (question/final states) must not grow
+     into it. The reveal card is nested inside .reveal-layout instead and
+     uses the flex side-col, so it is unaffected by this narrower cap. */
+  .main > .card {
+    max-width: 980px;
+  }
 
   .qtext {
     font-weight: 900;
@@ -571,7 +578,7 @@
   /* ── Floating HUD ─────────────────────────────────────────────────── */
   .hud {
     position: absolute;
-    top: 10px;
+    top: 24px;
     right: 22px;
     z-index: 30;
     background: rgba(255, 255, 255, 0.14);

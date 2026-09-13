@@ -125,19 +125,11 @@
       const data = (await res.json()) as { code: string; hostToken: string };
       const { code, hostToken } = data;
 
+      // Left in "lobby" — the host page's own lobby screen calls /start once
+      // the host clicks "Start first question →", matching the generate flow
+      // below (which never auto-starts either) and giving players a joining
+      // window before the quiz begins.
       const scope: SessionScope = { type: "pack", packId: selectedPackId };
-      const startRes = await fetch(`/api/sessions/${code}/start`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hostToken, scope, translation, mode }),
-      });
-      if (!startRes.ok) {
-        const body = (await startRes.json().catch(() => ({}))) as { error?: string };
-        createError = body.error ?? "Failed to start session from pack";
-        creating = false;
-        return;
-      }
-
       await finishSession(code, hostToken, scope);
     } catch (err) {
       console.error("createSessionFromPack error:", err);

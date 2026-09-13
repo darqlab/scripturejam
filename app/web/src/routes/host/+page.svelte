@@ -324,21 +324,18 @@
               <button type="button" class="link-btn" onclick={usePackInstead}>use a bundled pack instead</button>.
             </p>
           {/if}
-          <div class="field">
-            <label for="generate-book">Bible book</label>
-            <select id="generate-book" bind:value={generateBook}>
-              <option value="" disabled selected>Choose a book…</option>
-              {#each BIBLE_BOOKS as book}
-                <option value={book}>{book}</option>
-              {/each}
-            </select>
-          </div>
-
-          <div class="chapter-row">
+          <div class="inline-row">
+            <div class="field grow">
+              <label for="generate-book">Bible book</label>
+              <select id="generate-book" bind:value={generateBook}>
+                <option value="" disabled selected>Choose a book…</option>
+                {#each BIBLE_BOOKS as book}
+                  <option value={book}>{book}</option>
+                {/each}
+              </select>
+            </div>
             <div class="field narrow">
-              <label for="generate-chapter-start">
-                From chapter <span class="opt">(opt.)</span>
-              </label>
+              <label for="generate-chapter-start">From ch. <span class="opt">(opt.)</span></label>
               <input
                 id="generate-chapter-start"
                 type="number"
@@ -348,9 +345,7 @@
               />
             </div>
             <div class="field narrow">
-              <label for="generate-chapter-end">
-                To chapter <span class="opt">(opt.)</span>
-              </label>
+              <label for="generate-chapter-end">To ch. <span class="opt">(opt.)</span></label>
               <input
                 id="generate-chapter-end"
                 type="number"
@@ -359,50 +354,48 @@
                 placeholder="e.g. 5"
               />
             </div>
-          </div>
-          <p class="helper">
-            Leave both blank to draw from the whole book — e.g. Genesis chapter 1 to chapter 5
-            restricts every generated question to that range.
-          </p>
-
-          <div class="field">
-            <label for="generate-count">Number of questions</label>
-            <input
-              id="generate-count"
-              type="number"
-              min="5"
-              max="30"
-              bind:value={generateCount}
-              class="count-input"
-            />
+            <div class="field narrow">
+              <label for="generate-count">Questions</label>
+              <input
+                id="generate-count"
+                type="number"
+                min="5"
+                max="30"
+                bind:value={generateCount}
+                class="count-input"
+              />
+            </div>
           </div>
 
-          <fieldset class="sub-fieldset">
-            <legend>Difficulty</legend>
-            <div class="chip-row">
-              {#each [["mixed", "Mixed"], ...Object.entries(DIFFICULTY_LABELS)] as [val, lbl]}
-                <label class="chip-radio">
-                  <input type="radio" bind:group={generateDifficulty} value={val} />
-                  <span>{lbl}</span>
-                </label>
-              {/each}
-            </div>
-          </fieldset>
+          <div class="inline-row">
+            <fieldset class="sub-fieldset grow">
+              <legend>Difficulty</legend>
+              <div class="chip-row">
+                {#each [["mixed", "Mixed"], ...Object.entries(DIFFICULTY_LABELS)] as [val, lbl]}
+                  <label class="chip-radio">
+                    <input type="radio" bind:group={generateDifficulty} value={val} />
+                    <span>{lbl}</span>
+                  </label>
+                {/each}
+              </div>
+            </fieldset>
 
-          <fieldset class="sub-fieldset">
-            <legend>Age band</legend>
-            <div class="chip-row">
-              {#each [["all-ages", "All ages"], ["youth", "Youth"]] as [val, lbl]}
-                <label class="chip-radio">
-                  <input type="radio" bind:group={generateAgeBand} value={val} />
-                  <span>{lbl}</span>
-                </label>
-              {/each}
-            </div>
-          </fieldset>
+            <fieldset class="sub-fieldset grow">
+              <legend>Age band</legend>
+              <div class="chip-row">
+                {#each [["all-ages", "All ages"], ["youth", "Youth"]] as [val, lbl]}
+                  <label class="chip-radio">
+                    <input type="radio" bind:group={generateAgeBand} value={val} />
+                    <span>{lbl}</span>
+                  </label>
+                {/each}
+              </div>
+            </fieldset>
+          </div>
 
           <p class="helper">
-            Questions are generated live by AI when you create the session — this can take a few seconds.
+            Leave chapters blank to draw from the whole book. Questions are generated live by AI
+            when you create the session — this can take a few seconds.
           </p>
           {#if generateError}
             <p class="error" role="alert">{generateError}</p>
@@ -680,16 +673,22 @@
     box-shadow: 0 0 0 4px rgba(123, 47, 247, 0.15);
   }
   .count-input {
-    max-width: 200px;
+    max-width: 110px;
   }
 
-  .chapter-row {
+  .inline-row {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    align-items: flex-start;
+  }
+  .inline-row .grow {
+    flex: 1;
+    min-width: 160px;
   }
   .field.narrow {
-    width: 150px;
+    width: 110px;
+    flex-shrink: 0;
   }
   .field .opt {
     color: var(--ink-soft);

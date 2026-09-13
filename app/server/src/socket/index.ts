@@ -232,8 +232,25 @@ export function attachSocketServer(httpServer: HttpServer): TypedServer {
       if (!session) return ack({ ok: false, reason: "wrong_state" });
 
       if (session.state === "reveal" || (session.state === "lobby" && session.questionIds.length > 0)) {
-        ack({ ok: true });
+        const before = { state: session.state, currentIndex: session.currentIndex };
         await startQuestion(code);
+        const after = await getSession(code);
+        const advanced =
+          !!after && (after.state !== before.state || after.currentIndex !== before.currentIndex);
+        if (advanced) {
+          ack({ ok: true });
+        } else {
+          ack({ ok: false, reason: "wrong_state" });
+        }
+      } else if (session.state === "question") {
+        clearTimer(code);
+        await revealQuestion(code);
+        const after = await getSession(code);
+        if (after && after.state === "reveal") {
+          ack({ ok: true });
+        } else {
+          ack({ ok: false, reason: "wrong_state" });
+        }
       } else {
         ack({ ok: false, reason: "wrong_state" });
       }

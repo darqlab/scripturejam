@@ -72,6 +72,19 @@ function loadConfig() {
       .join("\n");
     throw new Error(`Config validation failed:\n${missing}`);
   }
+
+  // PUBLIC_URL backs every join QR code and join link (svg.ts, sessions.ts).
+  // In production there is no safe fallback: deriving it from the request
+  // Host header would let a crafted request mint QR codes pointing anywhere
+  // (rejected — see the bug report), and silently falling back to localhost
+  // would ship join links no real player can use. Fail fast at boot rather
+  // than lazily on the first session-create request.
+  if (result.data.NODE_ENV === "production" && !result.data.PUBLIC_URL) {
+    throw new Error(
+      "Config validation failed:\n  PUBLIC_URL: required when NODE_ENV=production — join QR codes and join links have no safe fallback (refusing to silently serve localhost links to real players)",
+    );
+  }
+
   return result.data;
 }
 

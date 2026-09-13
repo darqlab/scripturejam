@@ -34,6 +34,7 @@
   let starting = $state(false);
   let startError = $state<string | null>(null);
   let advancing = $state(false);
+  let advanceError = $state<string | null>(null);
   let copyDone = $state(false);
   let isCustomPack = $state(false);
 
@@ -106,11 +107,13 @@
     });
 
     socket.on("QUESTION", (payload: QuestionPayload) => {
+      advanceError = null;
       hostStore.setQuestion(payload);
       startTimer(payload.startedAt, payload.durationMs);
     });
 
     socket.on("REVEAL", (payload) => {
+      advanceError = null;
       stopTimer();
       hostStore.setReveal(payload as RevealPayloadHost);
     });
@@ -198,11 +201,12 @@
   function advance() {
     if (advancing) return;
     advancing = true;
+    advanceError = null;
     const socket = getSocket();
     socket.emit("ADVANCE", (ack: AdvanceAck) => {
       advancing = false;
       if (!ack.ok) {
-        // state mismatch — server will send SESSION_STATE update
+        advanceError = "Could not advance — please try again";
       }
     });
   }
@@ -492,6 +496,9 @@
     </div>
 
     <div class="dock">
+      {#if advanceError}
+        <span class="dock-error" role="alert">{advanceError}</span>
+      {/if}
       <button type="button" class="primary" onclick={advance} disabled={advancing}>
         {advancing ? "Loading…" : "Reveal answer →"}
       </button>
@@ -551,6 +558,9 @@
     </div>
 
     <div class="dock">
+      {#if advanceError}
+        <span class="dock-error" role="alert">{advanceError}</span>
+      {/if}
       <button type="button" class="primary" onclick={advance} disabled={advancing}>
         {advancing ? "Loading…" : q.index + 1 < q.total ? "Next question →" : "Show final scores →"}
       </button>

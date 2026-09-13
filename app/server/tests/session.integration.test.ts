@@ -383,6 +383,77 @@ describe.skipIf(skipIntegration)("Integration — session lifecycle", () => {
     },
     30_000
   );
+
+  // ── ADVANCE question → reveal (host-triggered early reveal) ─────────────────
+  //
+  // Regression test for the "Reveal answer →" button being dead by
+  // construction: the ADVANCE handler previously only accepted reveal→question
+  // and lobby→question, never question→reveal, so a host could not end a
+  // question early. This exercises the new question→reveal branch directly,
+  // with zero players answering, so the only way REVEAL can arrive is via the
+  // host's ADVANCE call — not the timer, and not the all-answered early-reveal
+  // path in the ANSWER handler.
+
+  it(
+    "ADVANCE during question triggers early reveal (host-only, no players needed)",
+    async () => {
+      // 1. Create + start a session with no players.
+      const createRes = await fetch(`${baseUrl}/api/sessions`, { method: "POST" });
+      expect(createRes.status).toBe(200);
+      const { code, hostToken } = (await createRes.json()) as {
+        code: string;
+        hostToken: string;
+      };
+
+      const hostSock = await connect(port);
+      const hostConnectAck = await emit<HostConnectAck>(hostSock, "HOST_CONNECT", {
+        code,
+        hostToken,
+      });
+      expect(hostConnectAck).toEqual({ ok: true });
+
+      const hostQuestionP = waitFor(hostSock, "QUESTION");
+      const startRes = await fetch(`${baseUrl}/api/sessions/${code}/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hostToken,
+          scope: { type: "pack", packId: "named_characters" },
+          translation: "KJV",
+          mode: "individual",
+        }),
+      });
+      expect(startRes.status).toBe(200);
+
+      const q1 = (await hostQuestionP) as QuestionPayload;
+      expect(q1.index).toBe(0);
+
+      // 2. ADVANCE immediately, well before QUESTION_DURATION_MS (500ms) and
+      //    with nobody having answered — the only trigger for REVEAL here is
+      //    the host's early-reveal ADVANCE branch.
+      const hostRevealP = waitFor(hostSock, "REVEAL");
+      const startedAt = Date.now();
+      const advanceAck = await emit<AdvanceAck>(hostSock, "ADVANCE");
+      expect(advanceAck).toEqual({ ok: true });
+
+      const reveal = (await hostRevealP) as RevealPayloadHost;
+      const elapsed = Date.now() - startedAt;
+      expect(elapsed).toBeLessThan(400); // well under the 500ms timer
+      expect(reveal.questionId).toBe(q1.questionId);
+      expect(reveal.answeredCount).toBe(0);
+
+      // 3. A second ADVANCE (reveal → question) still works afterward — the
+      //    new branch does not disturb the existing transition.
+      const hostQuestion2P = waitFor(hostSock, "QUESTION");
+      const advanceAck2 = await emit<AdvanceAck>(hostSock, "ADVANCE");
+      expect(advanceAck2).toEqual({ ok: true });
+      const q2 = (await hostQuestion2P) as QuestionPayload;
+      expect(q2.index).toBe(1);
+
+      hostSock.disconnect();
+    },
+    15_000
+  );
 });
 
 // ── Sanity test — always runs ─────────────────────────────────────────────────

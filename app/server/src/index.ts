@@ -94,4 +94,16 @@ if (config.NVIDIA_API_KEY) {
   );
 }
 
+if (config.PUBLIC_URL) {
+  logger.info("PUBLIC_URL configured", { publicUrl: config.PUBLIC_URL });
+} else {
+  // config.ts refuses to boot in production without PUBLIC_URL set, so
+  // reaching this branch means NODE_ENV is not "production" — the localhost
+  // fallback in svg.ts/sessions.ts is an explicit dev-only choice, not a
+  // silent trap.
+  logger.warn(
+    `PUBLIC_URL not set — join QR codes and join links will fall back to http://localhost:${config.PORT}, unusable for real players (safe only in dev/test)`,
+  );
+}
+
 attachSocketServer(app.server);

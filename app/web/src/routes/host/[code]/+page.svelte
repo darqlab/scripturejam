@@ -474,8 +474,19 @@
       {#if advanceError}
         <span class="dock-error" role="alert">{advanceError}</span>
       {/if}
-      <button type="button" class="primary" onclick={advance} disabled={advancing}>
-        {advancing ? "Loading…" : q.index + 1 < q.total ? "Next question →" : "Show final scores →"}
+      <button
+        type="button"
+        class="primary"
+        onclick={advance}
+        disabled={advancing || reveal.isAnimating}
+      >
+        {advancing
+          ? "Loading…"
+          : reveal.isAnimating
+            ? "Celebrating…"
+            : q.index + 1 < q.total
+              ? "Next question →"
+              : "Show final scores →"}
       </button>
     </div>
 

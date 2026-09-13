@@ -33,6 +33,13 @@ export function createRevealChoreography(getBurstCanvas: () => HTMLCanvasElement
   let scoresShown = $state<Record<string, number>>({});
   /** Standings in render order; re-sorted at stage 6. */
   let standingsOrder = $state<RevealPayloadHost["standings"]>([]);
+  /**
+   * True from the moment a reveal starts until its confetti burst has fired
+   * (or the choreography settled early on error) — the host page uses this
+   * to keep "Next question" disabled so advancing can't cut the celebration
+   * off mid-animation.
+   */
+  let isAnimating = $state(false);
 
   /**
    * Every timer/frame the running sequence owns, so it can be torn down
@@ -53,6 +60,7 @@ export function createRevealChoreography(getBurstCanvas: () => HTMLCanvasElement
       cancelAnimationFrame(choreoRaf);
       choreoRaf = null;
     }
+    isAnimating = false;
   }
 
   function sleep(ms: number, token: number): Promise<boolean> {
@@ -126,6 +134,7 @@ export function createRevealChoreography(getBurstCanvas: () => HTMLCanvasElement
   async function run(r: RevealPayloadHost, options: Array<{ id: string }>) {
     cancel();
     const token = choreoRun;
+    isAnimating = true;
 
     try {
       // Reset to the pre-reveal state: nothing counted, nothing known.
@@ -159,12 +168,16 @@ export function createRevealChoreography(getBurstCanvas: () => HTMLCanvasElement
 
       if (!(await sleep(BURST_DELAY_MS, token))) return;
       confettiBurst(getBurstCanvas());
+      if (token === choreoRun) isAnimating = false;
     } catch (err) {
       // The choreography is cosmetic; it must never be load-bearing for a
       // live room. If it throws for any reason (e.g. a Svelte effect guard),
       // skip straight to the end state so the host screen is still correct.
       console.error("[host] reveal choreography failed — settling to end state", err);
-      if (token === choreoRun) settleEndState(r);
+      if (token === choreoRun) {
+        settleEndState(r);
+        isAnimating = false;
+      }
     }
   }
 
@@ -210,6 +223,9 @@ export function createRevealChoreography(getBurstCanvas: () => HTMLCanvasElement
     },
     get standingsOrder() {
       return standingsOrder;
+    },
+    get isAnimating() {
+      return isAnimating;
     },
     start,
     cancel,

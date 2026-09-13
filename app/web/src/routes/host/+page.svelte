@@ -491,10 +491,16 @@
   }
 
   .create-col {
-    grid-column: 1;
+    grid-column: 2;
     display: flex;
     flex-direction: column;
+    align-items: flex-end;
     gap: 12px;
+  }
+  @media (max-width: 800px) {
+    .create-col {
+      grid-column: 1;
+    }
   }
 
   .left-col {

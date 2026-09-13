@@ -168,6 +168,8 @@ export interface SessionStatePayloadHost {
   }>;
   currentQuestion?: QuestionPayload;
   msRemaining?: number;
+  /** Present when `state === "reveal"` — lets a rejoining host restore the reveal screen. */
+  revealData?: RevealPayloadHost;
 }
 
 // ── Socket.IO event payloads — server → player ───────────────────────────────

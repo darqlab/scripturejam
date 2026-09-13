@@ -68,6 +68,9 @@ function createHostStore() {
         translation: payload.translation,
         currentIndex: payload.currentIndex,
         currentQuestion: payload.currentQuestion ?? s.currentQuestion,
+        total: payload.currentQuestion?.total ?? s.total,
+        revealData: payload.revealData ?? s.revealData,
+        answeredCount: payload.revealData?.answeredCount ?? s.answeredCount,
         players: payload.players.map((p) => ({
           playerId: p.playerId,
           nickname: p.nickname,

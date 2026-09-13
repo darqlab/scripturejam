@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy, untrack } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { hostStore } from "$lib/stores/host.js";
@@ -12,7 +12,7 @@
   import AnswerGrid from "$lib/components/AnswerGrid.svelte";
   import TimerBar from "$lib/components/TimerBar.svelte";
   import JoinCard from "$lib/components/JoinCard.svelte";
-  import confettiBurst from "$lib/confetti.js";
+  import { createRevealChoreography } from "$lib/reveal-choreography.svelte.js";
   import type {
     QuestionPayload,
     RevealPayloadHost,
@@ -263,143 +263,14 @@
 
 
   // ── Reveal choreography ────────────────────────────────────────────────────
-  // Implements host-reveal3-flow.md §Sequence: the audience must have exactly
-  // one thing to watch at a time, so each stage awaits the previous one.
-  //   1 answer counts (sequential)  2 correct highlight  3 points chips
-  //   4 verse card                  5 score count-up     6 standings re-order
-  // Stage 6 is handled declaratively by `animate:flip` on the keyed each below.
-
-  const COUNT_DURATION_MS = 1100; // per-answer count-up
-  const COUNT_PAUSE_MS = 450; // gap between answers
-  const VERSE_DELAY_MS = 1000; // after the correct answer is highlighted
-  const SCORE_DELAY_MS = 700; // after the verse appears
-  const SCORE_DURATION_MS = 1200; // score count-up
+  // The actual state + sequencing lives in reveal-choreography.svelte.ts so it
+  // can be mounted and exercised in isolation (via `$effect.root`) in a
+  // Vitest regression test — see reveal-choreography.test.ts (1.4). This
+  // component just wires it to `hostStore` and the template.
   const REORDER_MS = 600; // FLIP slide, matches animate:flip below
-  const BURST_DELAY_MS = 600; // confetti, last action of the reveal
-
-  /** Vote counts revealed so far — drives the per-tile number and fill bar. */
-  let countsShown = $state<Record<string, number>>({});
-  /** Null until every count has run; then the tiles highlight and dim. */
-  let revealedCorrectId = $state<string | null>(null);
-  let showGains = $state(false);
-  let showVerse = $state(false);
-  /** Live score per player during the count-up, keyed by playerId. */
-  let scoresShown = $state<Record<string, number>>({});
-  /** Standings in render order; re-sorted at stage 6. */
-  let standingsOrder = $state<RevealPayloadHost["standings"]>([]);
-
-  /**
-   * Every timer/frame the running sequence owns, so it can be torn down
-   * wholesale. A host who advances mid-choreography, a late socket event or a
-   * navigation must not leave a stray interval ticking against state that has
-   * already moved on.
-   */
-  let choreoTimers: Array<ReturnType<typeof setTimeout>> = [];
-  let choreoRaf: number | null = null;
-  /** Incremented on every cancel; a stale run sees the token change and exits. */
-  let choreoRun = 0;
-
-  function cancelChoreography() {
-    choreoRun += 1;
-    for (const t of choreoTimers) clearTimeout(t);
-    choreoTimers = [];
-    if (choreoRaf !== null) {
-      cancelAnimationFrame(choreoRaf);
-      choreoRaf = null;
-    }
-  }
-
-  function sleep(ms: number, token: number): Promise<boolean> {
-    return new Promise((resolve) => {
-      const t = setTimeout(() => resolve(token === choreoRun), ms);
-      choreoTimers.push(t);
-    });
-  }
-
-  /** Counts one option up over COUNT_DURATION_MS, then pauses. */
-  async function runCount(optionId: string, target: number, token: number): Promise<boolean> {
-    if (target <= 0) {
-      countsShown = { ...countsShown, [optionId]: 0 };
-      return sleep(COUNT_PAUSE_MS, token);
-    }
-    const stepMs = Math.max(16, COUNT_DURATION_MS / target);
-    for (let n = 1; n <= target; n++) {
-      if (!(await sleep(stepMs, token))) return false;
-      countsShown = { ...countsShown, [optionId]: n };
-    }
-    return sleep(COUNT_PAUSE_MS, token);
-  }
-
-  /** Animates every standing from previousScore to score in parallel. */
-  function runScoreCountUp(
-    standings: RevealPayloadHost["standings"],
-    token: number,
-  ): Promise<boolean> {
-    return new Promise((resolve) => {
-      const start = performance.now();
-      const step = (now: number) => {
-        if (token !== choreoRun) {
-          resolve(false);
-          return;
-        }
-        const raw = Math.min((now - start) / SCORE_DURATION_MS, 1);
-        const eased = 1 - Math.pow(1 - raw, 3); // ease-out cubic
-        const next: Record<string, number> = {};
-        for (const s of standings) {
-          next[s.playerId] = Math.round(
-            s.previousScore + (s.score - s.previousScore) * eased,
-          );
-        }
-        scoresShown = next;
-        if (raw < 1) {
-          choreoRaf = requestAnimationFrame(step);
-        } else {
-          choreoRaf = null;
-          resolve(true);
-        }
-      };
-      choreoRaf = requestAnimationFrame(step);
-    });
-  }
-
-  async function runChoreography(r: RevealPayloadHost, options: Array<{ id: string }>) {
-    cancelChoreography();
-    const token = choreoRun;
-
-    // Reset to the pre-reveal state: nothing counted, nothing known.
-    countsShown = Object.fromEntries(options.map((o) => [o.id, 0]));
-    revealedCorrectId = null;
-    showGains = false;
-    showVerse = false;
-    standingsOrder = [...r.standings].sort((a, b) => b.previousScore - a.previousScore);
-    scoresShown = Object.fromEntries(r.standings.map((s) => [s.playerId, s.previousScore]));
-
-    // 1 — counts, one option at a time, in the order they appear on screen.
-    for (const opt of options) {
-      if (!(await runCount(opt.id, r.optionCounts[opt.id] ?? 0, token))) return;
-    }
-
-    // 2 + 3 — the correct answer is highlighted and the points chips pop
-    // together, so the gain reads as the consequence of the reveal.
-    revealedCorrectId = r.correctOptionId;
-    showGains = true;
-
-    // 4 — verse, after a beat.
-    if (!(await sleep(VERSE_DELAY_MS, token))) return;
-    showVerse = true;
-
-    // 5 — scores.
-    if (!(await sleep(SCORE_DELAY_MS, token))) return;
-    if (!(await runScoreCountUp(r.standings, token))) return;
-
-    // 6 — re-order; animate:flip on the keyed each does the sliding.
-    standingsOrder = [...r.standings].sort((a, b) => b.score - a.score);
-
-    if (!(await sleep(BURST_DELAY_MS, token))) return;
-    confettiBurst(burstCanvas);
-  }
 
   let burstCanvas = $state<HTMLCanvasElement | null>(null);
+  const reveal = createRevealChoreography(() => burstCanvas);
 
   // Re-runs whenever a new REVEAL lands; the cleanup cancels a sequence that is
   // still mid-flight when the host advances.
@@ -407,16 +278,14 @@
     const r = $hostStore.revealData;
     const q = $hostStore.currentQuestion;
     if ($hostStore.state !== "reveal" || !r || !q) {
-      cancelChoreography();
+      reveal.cancel();
       return;
     }
-    untrack(() => {
-      void runChoreography(r, q.options);
-    });
-    return cancelChoreography;
+    reveal.start(r, q.options);
+    return reveal.cancel;
   });
 
-  onDestroy(cancelChoreography);
+  onDestroy(reveal.cancel);
 
   function fmt(n: number): string {
     return n.toLocaleString();
@@ -527,7 +396,7 @@
     <div class="main">
       <div class="hud">
         <h4>Top 5</h4>
-        {#each standingsOrder as s, i (s.playerId)}
+        {#each reveal.standingsOrder as s, i (s.playerId)}
           <div class="row" animate:flip={{ duration: REORDER_MS }}>
             <span class="rank">{i + 1}</span>
             <img
@@ -535,8 +404,8 @@
               alt=""
             />
             <span class="name">{s.nickname}</span>
-            <span class="score">{fmt(scoresShown[s.playerId] ?? s.previousScore)}</span>
-            {#if showGains && s.awarded > 0}
+            <span class="score">{fmt(reveal.scoresShown[s.playerId] ?? s.previousScore)}</span>
+            {#if reveal.showGains && s.awarded > 0}
               <span class="gain">+{s.awarded}</span>
             {/if}
           </div>
@@ -545,17 +414,18 @@
       </div>
 
       <div class="card">
+        <h2 class="qtext">{q.prompt}</h2>
         <AnswerGrid
           options={q.options}
           variant="host"
           counts={r.optionCounts}
-          {countsShown}
-          correctOptionId={revealedCorrectId}
+          countsShown={reveal.countsShown}
+          correctOptionId={reveal.revealedCorrectId}
         />
 
         <!-- Kept in the DOM but hidden until stage 4, so the card does not
              jump when the verse arrives. -->
-        <div class="scripture-card" class:is-shown={showVerse} aria-live="polite">
+        <div class="scripture-card" class:is-shown={reveal.showVerse} aria-live="polite">
           <p class="ref">
             {r.references
               .map(
@@ -938,8 +808,9 @@
   .srow .score { color: var(--grad-a); font-weight: 900; }
 
   /* ── Host control dock ────────────────────────────────────────────── */
-  /* Deliberately faded until hovered: on a projected screen the controls are
-     for the host, not the audience. */
+  /* Legible at rest — a projector has no cursor to hover with, so the host
+     must be able to read/hit these without hovering. Hover/focus stays as a
+     subtle emphasis on top. */
   .dock {
     position: fixed;
     left: 50%;
@@ -954,7 +825,7 @@
     border-radius: 999px;
     padding: 8px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
-    opacity: 0.32;
+    opacity: 0.9;
     transition: opacity 0.2s ease;
   }
   .dock:hover,

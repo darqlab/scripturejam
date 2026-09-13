@@ -2,12 +2,19 @@ import type { Server as HttpServer } from "node:http";
 import { Server } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
 import { z } from "zod";
-import type { ServerToClientEvents, ClientToServerEvents } from "@scripturejam/types";
+import type { ServerToClientEvents, ClientToServerEvents, QuestionPayload, RevealPayloadHost } from "@scripturejam/types";
 import { redis } from "../redis/client.js";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 import { getSession, saveSession, generateToken, generatePlayerId } from "../session/store.js";
-import { startQuestion, revealQuestion, finalizeSession, clearTimer } from "../game/engine.js";
+import {
+  startQuestion,
+  revealQuestion,
+  finalizeSession,
+  clearTimer,
+  buildHostQuestionPayload,
+  buildHostRevealPayload,
+} from "../game/engine.js";
 import { getContent } from "../content/loader.js";
 import { setIo, type SocketData, type TypedServer } from "./io.js";
 
@@ -165,12 +172,35 @@ export function attachSocketServer(httpServer: HttpServer): TypedServer {
         status: p.status,
       }));
 
+      // Mid-session recovery (2.1/2.2): a host who reconnects mid-question or
+      // mid-reveal must get that screen back, not the spinner. Both fields are
+      // already optional in the shared contract; only this send was missing.
+      let currentQuestion: QuestionPayload | undefined;
+      let msRemaining: number | undefined;
+      let revealData: RevealPayloadHost | undefined;
+
+      if (session.state === "question") {
+        currentQuestion = buildHostQuestionPayload(session) ?? undefined;
+        if (currentQuestion && session.questionStartedAt) {
+          msRemaining = Math.max(
+            0,
+            config.QUESTION_DURATION_MS - (Date.now() - session.questionStartedAt),
+          );
+        }
+      } else if (session.state === "reveal") {
+        currentQuestion = buildHostQuestionPayload(session) ?? undefined;
+        revealData = buildHostRevealPayload(session) ?? undefined;
+      }
+
       socket.emit("SESSION_STATE", {
         state: session.state,
         mode: session.mode,
         translation: session.translation,
         currentIndex: session.currentIndex,
         players,
+        currentQuestion,
+        msRemaining,
+        revealData,
       });
 
       logger.info("Host connected", { code });

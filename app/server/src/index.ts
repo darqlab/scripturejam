@@ -86,4 +86,12 @@ if (config.RATE_LIMIT_ENABLED) {
   );
 }
 
+if (config.NVIDIA_API_KEY) {
+  logger.info("Question generation configured", { model: config.NVIDIA_MODEL });
+} else {
+  logger.warn(
+    "Question generation unconfigured (NVIDIA_API_KEY not set) — session creation will be unavailable until it is set",
+  );
+}
+
 attachSocketServer(app.server);

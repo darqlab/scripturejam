@@ -6,6 +6,8 @@
   import { storageGet, storageSet } from "$lib/storage.js";
   import { gameStore } from "$lib/stores/game.js";
   import type { JoinAck } from "@scripturejam/types";
+  import Stage from "$lib/components/Stage.svelte";
+  import ConnectionPill from "$lib/components/ConnectionPill.svelte";
   import AvatarPicker from "./AvatarPicker.svelte";
 
   let code = $derived($page.params.code ?? "");
@@ -173,101 +175,256 @@
     onBack={() => (showAvatarPicker = false)}
   />
 {:else}
-  <main class="min-h-screen flex flex-col items-center justify-center p-4 bg-paper">
-    <div class="w-full max-w-sm bg-paper-2 rounded-[34px] border border-rule p-[34px_24px] space-y-5">
-      <!-- Top bar -->
-      <div class="flex items-center justify-between h-[54px] border-b border-rule pb-2">
-        <span class="text-[19px] text-ink-38">quiz.local</span>
-        <span class="text-[19px] font-mono text-ink-38 tracking-widest">{code}</span>
-      </div>
+  <Stage confetti={true}>
+    {#snippet meta()}
+      <ConnectionPill connected={true} label="Join" />
+    {/snippet}
 
-      <form onsubmit={handleJoin} class="space-y-5">
-        <!-- Avatar -->
-        <div class="flex flex-col items-center gap-2">
-          <button
-            type="button"
-            onclick={() => (showAvatarPicker = true)}
-            class="relative"
-            aria-label="Choose avatar"
-          >
-            {#if avatarId}
-              <img
-                src="/api/avatars/{avatarId}/monogram.svg?name={encodeURIComponent(avatarDisplayName || avatarId)}"
-                alt=""
-                class="w-[104px] h-[104px] rounded-full border border-[rgba(30,58,95,.2)] bg-navy-8"
-              />
-            {:else}
-              <div class="w-[104px] h-[104px] rounded-full bg-navy-8 border border-[rgba(30,58,95,.2)]"></div>
-            {/if}
+    <div class="main">
+      <div class="join-card card">
+        <form onsubmit={handleJoin} class="join-form">
+          <!-- Avatar -->
+          <div class="avatar-pick">
+            <button type="button" onclick={() => (showAvatarPicker = true)} aria-label="Change avatar">
+              <div class="avatar">
+                {#if avatarId}
+                  <img
+                    src="/api/avatars/{avatarId}/monogram.svg?name={encodeURIComponent(avatarDisplayName || avatarId)}"
+                    alt=""
+                  />
+                {:else}
+                  <span class="placeholder">+</span>
+                {/if}
+              </div>
+            </button>
+            <span class="hint">tap to change</span>
+          </div>
+
+          <!-- Session code -->
+          <div class="field">
+            <input
+              id="code"
+              type="text"
+              value={code}
+              class="code"
+              maxlength="6"
+              readonly={!!$page.params.code}
+              aria-label="Session code"
+            />
+          </div>
+
+          <!-- Your name / Team name -->
+          <div class="field">
+            <label for="nickname">{mode === "group" ? "Team name" : "Your name"}</label>
+            <input
+              id="nickname"
+              type="text"
+              bind:value={nickname}
+              class="name"
+              maxlength="24"
+              placeholder={mode === "group" ? "Enter team name" : "Enter your name"}
+              required
+              autocomplete="off"
+            />
+          </div>
+
+          {#if error}
+            <p class="error" role="alert">{error}</p>
+          {/if}
+
+          <button type="submit" class="join-btn" disabled={!nickname.trim() || !avatarId || joining}>
+            {joining ? "Joining…" : "Join quiz →"}
           </button>
-          <p class="text-[19px] text-ink-60">tap to change</p>
-        </div>
+        </form>
 
-        <!-- Session code -->
-        <div>
-          <input
-            id="code"
-            type="text"
-            value={code}
-            class="w-full h-[58px] border border-rule rounded-[10px] px-3 py-2 text-[28px] font-mono tracking-[.3em] uppercase text-center bg-paper-2 text-ink"
-            maxlength="6"
-            readonly={!!$page.params.code}
-            aria-label="Session code"
-          />
-        </div>
-
-        <!-- Your name / Team name -->
-        <div>
-          <label for="nickname" class="block text-[21px] font-semibold uppercase tracking-[.16em] text-ink-38 mb-1">
-            {mode === "group" ? "Team name" : "Your name"}
+        <div class="access">
+          <span class="label">Accessibility</span>
+          <label>
+            <input type="checkbox" checked={largeText} onchange={toggleLargeText} />
+            <span>Large text</span>
           </label>
-          <input
-            id="nickname"
-            type="text"
-            bind:value={nickname}
-            class="w-full h-[58px] border border-rule rounded-[10px] px-3 py-2 text-[24px] min-h-[58px] bg-paper-2 text-ink caret-navy"
-            maxlength="24"
-            placeholder={mode === "group" ? "Enter team name" : "Enter your name"}
-            required
-            autocomplete="off"
-          />
+          <label>
+            <input type="checkbox" checked={highContrast} onchange={toggleHighContrast} />
+            <span>High contrast</span>
+          </label>
         </div>
-
-        {#if error}
-          <p class="text-red-600 text-sm font-medium" role="alert">{error}</p>
-        {/if}
-
-        <button
-          type="submit"
-          class="w-full bg-navy text-paper rounded-[10px] px-4 py-3 font-semibold text-[25px] min-h-[58px] disabled:opacity-50 hover:bg-navy/90 transition-colors"
-          disabled={!nickname.trim() || !avatarId || joining}
-        >
-          {joining ? "Joining…" : "Join quiz →"}
-        </button>
-      </form>
-
-      <!-- Accessibility block -->
-      <div class="border-t border-rule pt-4 space-y-2">
-        <p class="text-xs font-semibold uppercase tracking-[.16em] text-ink-38">accessibility</p>
-        <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={largeText}
-            onchange={toggleLargeText}
-            class="w-5 h-5 rounded border-rule text-navy focus:ring-navy"
-          />
-          <span class="text-sm text-ink">Large text</span>
-        </label>
-        <label class="flex items-center gap-3 min-h-[44px] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={highContrast}
-            onchange={toggleHighContrast}
-            class="w-5 h-5 rounded border-rule text-navy focus:ring-navy"
-          />
-          <span class="text-sm text-ink">High contrast</span>
-        </label>
       </div>
     </div>
-  </main>
+  </Stage>
 {/if}
+
+<style>
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 16px 24px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .join-card {
+    padding: 28px 24px;
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-top: 6px solid var(--gold);
+    position: relative;
+  }
+
+  .join-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .avatar-pick {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .avatar-pick button {
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    border: 4px solid var(--gold);
+    background: var(--white);
+    display: grid;
+    place-items: center;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+    animation: pulseRing 2.2s ease-in-out infinite;
+  }
+  .avatar-pick button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
+  }
+  @keyframes pulseRing {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 201, 60, 0.5); }
+    50%      { box-shadow: 0 0 0 14px rgba(255, 201, 60, 0); }
+  }
+  .avatar-pick .avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(42, 26, 94, 0.06);
+  }
+  .avatar-pick .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+  }
+  .avatar-pick .placeholder {
+    font-size: 24px;
+    color: var(--ink-soft);
+  }
+  .avatar-pick .hint {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field :global(input) {
+    width: 100%;
+    height: 58px;
+    border: 2px solid rgba(42, 26, 94, 0.16);
+    border-radius: 14px;
+    padding: 0 14px;
+    font-size: 22px;
+    text-align: center;
+    background: var(--white);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+  .field :global(input:focus) {
+    border-color: var(--grad-a);
+    box-shadow: 0 0 0 4px rgba(123, 47, 247, 0.15);
+  }
+  .field :global(input.code) {
+    font-family: "Poppins", monospace;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-weight: 800;
+  }
+  .field :global(input.name) {
+    text-align: center;
+  }
+
+  .error {
+    color: var(--color-option-a);
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .join-btn {
+    width: 100%;
+    height: 58px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--grad-a);
+    color: #fff;
+    font-weight: 800;
+    font-size: 20px;
+    box-shadow: 0 8px 20px rgba(123, 47, 247, 0.35);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+  }
+  .join-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px rgba(123, 47, 247, 0.42);
+    background: var(--grad-b);
+  }
+  .join-btn:disabled {
+    opacity: 0.5;
+  }
+
+  .access {
+    border-top: 1px solid rgba(42, 26, 94, 0.12);
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .access .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .access label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .access input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--grad-a);
+  }
+</style>

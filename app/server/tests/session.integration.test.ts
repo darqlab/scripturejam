@@ -240,6 +240,34 @@ describe.skipIf(skipIntegration)("Integration — session lifecycle", () => {
       expect(hostReveal1.answeredCount).toBe(PLAYER_COUNT);
       expect(hostReveal1.playerCount).toBe(PLAYER_COUNT);
 
+      // optionCounts — every option present, all 5 votes on the one option they
+      // all picked, and the total reconciling with answeredCount.
+      expect(Object.keys(hostReveal1.optionCounts).sort()).toEqual(
+        q1.options.map((o) => o.id).sort(),
+      );
+      expect(hostReveal1.optionCounts[pick1]).toBe(PLAYER_COUNT);
+      for (const opt of q1.options) {
+        if (opt.id !== pick1) expect(hostReveal1.optionCounts[opt.id]).toBe(0);
+      }
+      expect(
+        Object.values(hostReveal1.optionCounts).reduce((a, b) => a + b, 0),
+      ).toBe(hostReveal1.answeredCount);
+
+      // standings — top 5 with the score each player entered the question on.
+      // On question 1 everyone starts at 0, so previousScore must be 0 and the
+      // new score must equal exactly the points awarded.
+      expect(hostReveal1.standings).toHaveLength(PLAYER_COUNT);
+      for (const s of hostReveal1.standings) {
+        expect(s.previousScore).toBe(0);
+        expect(s.score).toBe(s.previousScore + s.awarded);
+      }
+      // Sorted by score, descending.
+      const scores1 = hostReveal1.standings.map((s) => s.score);
+      expect(scores1).toEqual([...scores1].sort((a, b) => b - a));
+
+      // The distribution is host-only: players must not learn how the room voted.
+      // (Asserted against the player payloads below.)
+
       const playerReveal1s = await Promise.all(playerReveal1Promises);
       for (const raw of playerReveal1s) {
         const p = raw as RevealPayloadPlayer;
@@ -247,6 +275,8 @@ describe.skipIf(skipIntegration)("Integration — session lifecycle", () => {
         expect(typeof p.yourCorrect).toBe("boolean");
         expect(p.totalPlayers).toBe(PLAYER_COUNT);
         expect(p.yourRank).toBeGreaterThan(0);
+        expect(p).not.toHaveProperty("optionCounts");
+        expect(p).not.toHaveProperty("standings");
         // Score correctness check
         if (pick1 === hostReveal1.correctOptionId) {
           expect(p.yourAwarded).toBeGreaterThanOrEqual(500);
@@ -277,6 +307,18 @@ describe.skipIf(skipIntegration)("Integration — session lifecycle", () => {
 
       const hostReveal2 = (await hostReveal2P) as RevealPayloadHost;
       expect(hostReveal2.questionId).toBe(q2.questionId);
+
+      // The running total carries across questions: what a player entered
+      // question 2 on must be exactly what they left question 1 with. This is
+      // the property the reveal's score count-up animates between, so a stale
+      // or double-counted previousScore would show as a visibly wrong number.
+      const q1ScoreByPlayer = new Map(
+        hostReveal1.standings.map((s) => [s.playerId, s.score]),
+      );
+      for (const s of hostReveal2.standings) {
+        expect(s.previousScore).toBe(q1ScoreByPlayer.get(s.playerId));
+        expect(s.score).toBe(s.previousScore + s.awarded);
+      }
       await Promise.all(playerReveal2Promises);
 
       // 10. Host emits END → FINAL ─────────────────────────────────────────────

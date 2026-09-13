@@ -4,6 +4,10 @@
   import { gameStore } from "$lib/stores/game.js";
   import { connectSocket, getSocket } from "$lib/socket/client.js";
   import { storageGet, storageSet } from "$lib/storage.js";
+  import Stage from "$lib/components/Stage.svelte";
+  import ConnectionPill from "$lib/components/ConnectionPill.svelte";
+  import TimerBar from "$lib/components/TimerBar.svelte";
+  import AnswerGrid from "$lib/components/AnswerGrid.svelte";
   import type {
     QuestionPayload,
     RevealPayloadPlayer,
@@ -15,11 +19,6 @@
   } from "@scripturejam/types";
 
   let code = $derived($page.params.code ?? "");
-
-  const SHAPES = ["▲", "●", "■", "◆"];
-  const SHAPE_LABELS = ["Triangle", "Circle", "Square", "Diamond"];
-  // Keys map to CSS custom properties --color-option-{a,b,c,d} (a=navy/▲, b=clay/●, c=bronze/■, d=vine/◆)
-  const OPTION_KEYS = ["a", "b", "c", "d"] as const;
 
   let timerProgress = $state(100);
   let timerRaf = $state<number | null>(null);
@@ -206,159 +205,520 @@
     const v = n % 100;
     return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
   }
+
+  // Reveal count-up (points then cumulative score), matching the host reveal easing.
+  let ptsShown = $state(0);
+  let scoreShown = $state(0);
+  let revealCountKey = $state<string | null>(null);
+
+  $effect(() => {
+    const r = $gameStore.revealData;
+    if (!r) {
+      revealCountKey = null;
+      return;
+    }
+    const key = `${r.yourRank}:${r.yourAwarded}:${r.yourCumulative}`;
+    if (revealCountKey === key) return;
+    revealCountKey = key;
+    ptsShown = 0;
+    scoreShown = 0;
+
+    function countUp(target: number, dur: number, set: (v: number) => void) {
+      const start = performance.now();
+      function step(now: number) {
+        const p = Math.min((now - start) / dur, 1);
+        set(Math.round(target * p));
+        if (p < 1) requestAnimationFrame(step);
+        else set(target);
+      }
+      requestAnimationFrame(step);
+    }
+
+    const t1 = setTimeout(() => {
+      countUp(r.yourAwarded, 900, (v) => (ptsShown = v));
+      const t2 = setTimeout(() => countUp(r.yourCumulative, 900, (v) => (scoreShown = v)), 450);
+      return () => clearTimeout(t2);
+    }, 400);
+    return () => clearTimeout(t1);
+  });
 </script>
 
 {#if $gameStore.reconnecting}
-  <div class="fixed inset-0 z-50 bg-[rgba(35,32,27,.55)] flex items-center justify-center">
-    <div class="bg-paper rounded-[16px] p-[30px_34px] text-center shadow-xl max-w-[280px] mx-4">
-      <p class="text-[30px] font-semibold mb-2 text-ink">Reconnecting…</p>
-      <p class="text-[20px] text-ink-60">Your score is safe</p>
+  <div class="overlay" role="alert">
+    <div class="overlay-card card">
+      <p class="overlay-title">Reconnecting…</p>
+      <p class="overlay-sub">Your score is safe</p>
     </div>
   </div>
 {/if}
 
 {#if kicked}
-  <main class="min-h-screen flex flex-col items-center justify-center p-6 bg-[rgba(154,52,18,.1)]">
-    <div class="max-w-sm w-full text-center space-y-4">
-      <div class="text-6xl">✕</div>
-      <h1 class="text-2xl font-bold text-clay">Removed from session</h1>
-      <p class="text-ink-60">{kickedReason || "You were removed from this session."}</p>
-      <a href="/" class="inline-block mt-4 px-6 py-3 bg-navy text-paper rounded-[10px] font-semibold min-h-[44px] hover:bg-navy/90 transition-colors">
-        Go home
-      </a>
+  <Stage confetti={false}>
+    {#snippet meta()}
+      <ConnectionPill connected={false} label="Removed" />
+    {/snippet}
+    <div class="center-main">
+      <div class="card kicked-card">
+        <div class="glyph" aria-hidden="true">✕</div>
+        <h1>Removed from session</h1>
+        <p class="muted">{kickedReason || "You were removed from this session."}</p>
+        <a href="/" class="btn-primary">Go home</a>
+      </div>
     </div>
-  </main>
+  </Stage>
 {:else if $gameStore.sessionState === "lobby"}
-  <main class="min-h-screen flex flex-col items-center justify-center p-6 bg-paper text-ink">
-    <div class="max-w-sm w-full text-center space-y-6">
-      {#if $gameStore.avatarId}
-        <img
-          src="/api/avatars/{$gameStore.avatarId}/monogram.svg?name={encodeURIComponent($gameStore.nickname ?? '')}"
-          alt={$gameStore.nickname ?? "You"}
-          class="w-24 h-24 rounded-full mx-auto ring-4 ring-navy-8"
-        />
-      {:else}
-        <div class="w-24 h-24 rounded-full bg-navy-8 mx-auto ring-4 ring-navy-8"></div>
-      {/if}
-      <div>
-        <p class="text-2xl font-bold text-ink">{$gameStore.nickname ?? "Player"}</p>
-        <p class="text-ink-60 text-sm mt-1">You're in!</p>
-      </div>
-      <div class="bg-navy-8 rounded-[10px] p-6 border border-[rgba(30,58,95,.2)]">
-        <p class="text-lg font-semibold text-navy animate-pulse">Waiting for host to start…</p>
-        <p class="text-ink-60 text-sm mt-2">Get ready for the quiz</p>
+  <Stage>
+    {#snippet meta()}
+      <ConnectionPill connected={$gameStore.connected} label="In lobby" />
+    {/snippet}
+    <div class="center-main">
+      <div class="card lobby-card">
+        <div class="avatar">
+          {#if $gameStore.avatarId}
+            <img
+              src="/api/avatars/{$gameStore.avatarId}/monogram.svg?name={encodeURIComponent($gameStore.nickname ?? '')}"
+              alt={$gameStore.nickname ?? "You"}
+            />
+          {/if}
+        </div>
+        <div>
+          <div class="name">{$gameStore.nickname ?? "Player"}</div>
+          <div class="in">You're in!</div>
+        </div>
+        <div class="waiting">
+          <div class="msg">Waiting for host to start…</div>
+          <div class="sub">Get ready for the quiz</div>
+        </div>
       </div>
     </div>
-  </main>
+  </Stage>
 {:else if $gameStore.sessionState === "question" && $gameStore.currentQuestion}
   {@const q = $gameStore.currentQuestion}
-  <main class="min-h-screen flex flex-col bg-paper text-ink">
-    <div class="px-[18px] pt-4 pb-2">
-      <div class="flex items-center justify-between text-sm text-ink-60 mb-2">
-        <span class="font-medium">Question {q.index + 1} / {q.total}</span>
-        <span class="font-mono text-vine font-medium">{$gameStore.yourLocked ? "Locked in ✓" : ""}</span>
-      </div>
-      <div class="w-full bg-[rgba(35,32,27,.12)] rounded-full h-[11px] overflow-hidden">
-        <div
-          class="h-full rounded-full transition-none bg-vine"
-          style="width: {timerProgress}%"
-        ></div>
-      </div>
-    </div>
-
-    <div class="flex-1 flex flex-col px-[16px] pb-4 justify-center">
-      <p class="text-center text-ink-38 text-sm mb-6">Look at the host screen for the question</p>
-
-      <div class="grid grid-cols-2 gap-3 max-w-sm mx-auto w-full">
-        {#each q.options as option, i}
-          {@const locked = $gameStore.yourLocked}
-          {@const isPick = $gameStore.yourPick === option.id}
-          <button
-            type="button"
-            onclick={() => submitAnswer(option.id)}
-            disabled={locked || answerSubmitting}
-            style="background-color: var(--color-option-{OPTION_KEYS[i]})"
-            class="
-              flex items-center justify-center px-4 py-3 rounded-[18px] border-2 border-[rgba(35,32,27,.18)] font-semibold text-paper
-              min-h-[170px] transition-all active:scale-[.95]
-              {!locked ? 'hover:brightness-90' : ''}
-              {locked && isPick ? 'ring-4 ring-[rgba(246,242,232,.9)] ring-offset-2 ring-offset-[rgba(35,32,27,.18)] scale-[.95]' : ''}
-              {locked && !isPick ? 'opacity-35' : ''}
-            "
-            aria-label="{SHAPE_LABELS[i]}: {option.text}"
-          >
-            <span class="text-[58px] w-[72px] text-center flex-shrink-0" aria-hidden="true">{SHAPES[i]}</span>
-          </button>
-        {/each}
-      </div>
-
+  <Stage confetti={false}>
+    {#snippet meta()}
+      <span class="pill">Question {q.index + 1} / {q.total}</span>
       {#if $gameStore.yourLocked}
-        <p class="text-center text-vine text-sm font-medium mt-4">Answer locked in — waiting for reveal</p>
+        <span class="pill locked-pill">Locked in ✓</span>
       {/if}
-    </div>
+    {/snippet}
 
-    <footer class="px-[18px] pt-4 border-t border-rule">
-      <p class="text-center text-[19px] text-ink-38">Answers are on the big screen</p>
-    </footer>
-  </main>
+    <div class="question-main">
+      <TimerBar progress={timerProgress} />
+      <div class="answers-fill">
+        <AnswerGrid
+          options={q.options}
+          variant="player"
+          picked={$gameStore.yourPick ?? null}
+          disabled={$gameStore.yourLocked || answerSubmitting}
+          onpick={submitAnswer}
+        />
+      </div>
+    </div>
+  </Stage>
 {:else if $gameStore.sessionState === "reveal" && $gameStore.revealData}
   {@const r = $gameStore.revealData}
-  <main class="min-h-screen flex flex-col bg-paper text-ink px-[18px] py-6">
-    <div class="max-w-sm mx-auto w-full space-y-5">
-      <div class="rounded-[18px] p-[28px_20px] text-center {r.yourCorrect ? 'bg-vine' : 'bg-clay'} text-paper">
-        <p class="text-[46px] mb-2">{r.yourCorrect ? "✓" : "✗"}</p>
-        <p class="text-[38px] font-bold">{r.yourCorrect ? "Correct!" : "Wrong"}</p>
-        {#if r.yourAwarded > 0}
-          <p class="text-[24px] mt-1 opacity-90">+{r.yourAwarded} points</p>
-        {/if}
-      </div>
+  <Stage confetti={false}>
+    {#snippet meta()}
+      {#if $gameStore.currentQuestion}
+        <span class="pill">Question {$gameStore.currentQuestion.index + 1} / {$gameStore.currentQuestion.total}</span>
+      {/if}
+    {/snippet}
 
-      <p class="text-center text-ink-38 text-sm">See the host screen for the correct answer and scripture</p>
-
-      <div class="bg-paper-2 rounded-[14px] border border-rule p-4 flex items-center justify-between">
-        <div>
-          <p class="text-xs text-ink-38 uppercase tracking-wide">Your rank</p>
-          <p class="text-[34px] font-bold text-ink">{ordinal(r.yourRank)}</p>
-          <p class="text-xs text-ink-38">of {r.totalPlayers}</p>
+    <div class="reveal-main">
+      <div class="reveal-card">
+        <div class="correct" class:is-wrong={!r.yourCorrect}>
+          <div class="check">{r.yourCorrect ? "✓" : "✗"}</div>
+          <div class="label">{r.yourCorrect ? "Correct!" : "Wrong"}</div>
+          {#if r.yourAwarded > 0}
+            <div class="pts">+{ptsShown.toLocaleString()} points</div>
+          {/if}
         </div>
-        <div class="text-right">
-          <p class="text-xs text-ink-38 uppercase tracking-wide">Score</p>
-          <p class="text-[34px] font-bold text-navy">{r.yourCumulative}</p>
+
+        <p class="hint">See the host screen for the correct answer and scripture</p>
+
+        <div class="summary">
+          <div class="col">
+            <div class="col-label">Your rank</div>
+            <div class="col-value">{ordinal(r.yourRank)}</div>
+            <div class="col-of">of {r.totalPlayers}</div>
+          </div>
+          <div class="col right">
+            <div class="col-label">Score</div>
+            <div class="col-value">{scoreShown.toLocaleString()}</div>
+          </div>
         </div>
       </div>
     </div>
-  </main>
+  </Stage>
 {:else if $gameStore.sessionState === "final" && $gameStore.finalData}
   {@const f = $gameStore.finalData}
-  <main class="min-h-screen flex flex-col bg-[linear-gradient(180deg,var(--navy),#1a2d4a)] text-paper px-4 py-8">
-    <div class="max-w-sm mx-auto w-full space-y-6 text-center">
-      <div>
-        <p class="text-5xl mb-3">🏆</p>
-        <h1 class="text-3xl font-bold">Quiz complete!</h1>
-      </div>
+  <Stage>
+    {#snippet meta()}
+      <span class="pill">Finished</span>
+    {/snippet}
+    <div class="center-main">
+      <div class="card final-card">
+        <div class="trophy" aria-hidden="true">🏆</div>
+        <h1>Quiz complete!</h1>
 
-      <div class="bg-white/10 rounded-[18px] p-6 space-y-2 border border-white/10">
-        <p class="text-5xl font-black">{ordinal(f.yourFinalRank)}</p>
-        <p class="text-white/70">of {f.totalPlayers} players</p>
-        <div class="border-t border-white/20 pt-3 mt-3">
-          <p class="text-2xl font-bold">{f.yourFinalScore} pts</p>
-          <p class="text-white/70 text-sm">{f.yourAnsweredCorrect} correct answers</p>
+        <div class="result">
+          <div class="place">{ordinal(f.yourFinalRank)}</div>
+          <div class="of">of {f.totalPlayers} players</div>
+          <div class="divider"></div>
+          <div class="pts">{f.yourFinalScore} pts</div>
+          <div class="answers">{f.yourAnsweredCorrect} correct answers</div>
         </div>
-      </div>
 
-      <a
-        href="/r/{code}"
-        class="block w-full bg-paper text-navy font-bold rounded-[18px] px-4 py-4 min-h-[44px] hover:bg-paper/90 transition-colors"
-      >
-        Open scoreboard →
-      </a>
+        <a href="/r/{code}" class="scoreboard-btn">Open scoreboard →</a>
+      </div>
     </div>
-  </main>
+  </Stage>
 {:else}
-  <main class="min-h-screen flex flex-col items-center justify-center p-6 bg-paper text-ink">
-    <div class="text-center space-y-3">
-      <div class="w-10 h-10 border-4 border-navy border-t-transparent rounded-full animate-spin mx-auto"></div>
-      <p class="text-ink-60">Connecting…</p>
+  <Stage confetti={false}>
+    <div class="center-main">
+      <div class="connecting">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="connecting-text">Connecting…</p>
+      </div>
     </div>
-  </main>
+  </Stage>
 {/if}
+
+<style>
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(42, 26, 94, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .overlay-card {
+    padding: 30px 34px;
+    text-align: center;
+    max-width: 280px;
+    margin: 0 16px;
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.3);
+  }
+  .overlay-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  .overlay-sub {
+    font-size: 15px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  .center-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    padding: 16px 16px 24px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .kicked-card,
+  .lobby-card,
+  .final-card {
+    width: 100%;
+    flex: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 40px 28px;
+    border-top: 6px solid var(--gold);
+  }
+
+  .kicked-card .glyph {
+    font-size: 56px;
+    color: var(--color-option-a);
+  }
+  .kicked-card h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+  .muted {
+    color: var(--ink-soft);
+  }
+  .btn-primary {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 12px 28px;
+    background: var(--grad-a);
+    color: #fff;
+    border-radius: 14px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: background 0.16s ease;
+  }
+  .btn-primary:hover {
+    background: var(--grad-b);
+  }
+
+  .lobby-card .avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--gold);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+    background: rgba(42, 26, 94, 0.06);
+  }
+  .lobby-card .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .lobby-card .name {
+    font-weight: 900;
+    font-size: 30px;
+    color: var(--ink);
+  }
+  .lobby-card .in {
+    color: var(--ink-soft);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .waiting {
+    width: 100%;
+    background: rgba(123, 47, 247, 0.08);
+    border: 2px solid rgba(123, 47, 247, 0.25);
+    border-radius: 18px;
+    padding: 24px 18px;
+  }
+  .waiting .msg {
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--grad-a);
+    animation: pulseMsg 1.6s ease-in-out infinite;
+  }
+  .waiting .sub {
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-top: 6px;
+  }
+  @keyframes pulseMsg {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
+  }
+
+  .question-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px 16px;
+    position: relative;
+    z-index: 10;
+    gap: 18px;
+  }
+  .answers-fill {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+  .locked-pill {
+    background: rgba(38, 137, 12, 0.28);
+  }
+
+  .reveal-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px 18px;
+    position: relative;
+    z-index: 10;
+  }
+  .reveal-card {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+  }
+  .correct {
+    background: linear-gradient(135deg, var(--color-option-d), #3aa80c);
+    color: #fff;
+    border-radius: 24px;
+    padding: 30px 24px;
+    text-align: center;
+    box-shadow: 0 22px 60px rgba(38, 137, 12, 0.4);
+  }
+  .correct.is-wrong {
+    background: linear-gradient(135deg, var(--color-option-a), #ff5470);
+    box-shadow: 0 22px 60px rgba(226, 27, 60, 0.4);
+  }
+  .correct .check {
+    font-size: 56px;
+    font-weight: 900;
+    animation: popCheck 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+  }
+  .correct .label {
+    font-size: 38px;
+    font-weight: 900;
+    line-height: 1;
+    margin-top: 4px;
+  }
+  .correct .pts {
+    font-size: 24px;
+    font-weight: 800;
+    margin-top: 8px;
+    opacity: 0.92;
+  }
+  @keyframes popCheck {
+    0%  { transform: scale(0); }
+    70% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+  }
+  .hint {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--white);
+    color: var(--ink);
+    border-radius: 18px;
+    padding: 20px 22px;
+    box-shadow: 0 10px 30px rgba(42, 26, 94, 0.2);
+  }
+  .summary .col-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 700;
+  }
+  .summary .col-value {
+    font-size: 34px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+  .summary .col-of {
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .summary .right {
+    text-align: right;
+  }
+  .summary .right .col-value {
+    color: var(--grad-a);
+  }
+
+  .final-card .trophy {
+    font-size: 64px;
+    animation: floatTrophy 2.4s ease-in-out infinite;
+  }
+  @keyframes floatTrophy {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+  .final-card h1 {
+    margin: 0;
+    font-weight: 900;
+    font-size: 30px;
+    color: var(--ink);
+  }
+  .result {
+    width: 100%;
+    background: rgba(123, 47, 247, 0.08);
+    border: 2px solid rgba(123, 47, 247, 0.22);
+    border-radius: 18px;
+    padding: 24px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .result .place {
+    font-size: 56px;
+    font-weight: 900;
+    color: var(--grad-a);
+    line-height: 1;
+  }
+  .result .of {
+    color: var(--ink-soft);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .result .divider {
+    border-top: 2px solid rgba(42, 26, 94, 0.12);
+    margin: 10px 0;
+  }
+  .result .pts {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+  .result .answers {
+    color: var(--ink-soft);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .scoreboard-btn {
+    display: block;
+    width: 100%;
+    height: 58px;
+    line-height: 58px;
+    border-radius: 14px;
+    background: var(--grad-a);
+    color: #fff;
+    font-weight: 800;
+    font-size: 20px;
+    text-decoration: none;
+    box-shadow: 0 8px 20px rgba(123, 47, 247, 0.35);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+  }
+  .scoreboard-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px rgba(123, 47, 247, 0.42);
+    background: var(--grad-b);
+  }
+
+  /* This state sits directly on the gradient, not on a white card, so it must
+     NOT use --ink-soft (an on-white token) — that renders near-invisible. */
+  .connecting-text {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 700;
+  }
+  .connecting {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>

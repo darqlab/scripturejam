@@ -117,6 +117,26 @@ export interface RevealPayloadHost {
     awarded: number;
   }>;
   answeredCount: number;
+  /**
+   * Per-option answer distribution, keyed by option id, every option present
+   * (zeros included). Host-only by design: players must not learn how the room
+   * voted. Drives the reveal choreography's count-up stage.
+   */
+  optionCounts: Record<string, number>;
+  /**
+   * Top 5 by cumulative score AFTER this question, each carrying the score it
+   * entered the question on. Drives the reveal's score count-up and standings
+   * re-order. Distinct from `perQuestionTop5`, which lists only correct
+   * answerers and has no running total.
+   */
+  standings: Array<{
+    playerId: string;
+    nickname: string;
+    avatarId: string;
+    score: number;
+    previousScore: number;
+    awarded: number;
+  }>;
   playerCount: number;
   verseText: string;
   translation: Translation;

@@ -373,21 +373,28 @@
     {@const q = $hostStore.currentQuestion}
     <!-- ── Question ─────────────────────────────────────────────────────── -->
     <div class="main">
-      <!-- No live "answered" counter here on purpose: the server sends no
-           per-answer event to the host, so `answeredCount` stays 0 until
-           REVEAL. The previous design showed it anyway and it always read 0. -->
-      <div class="hud">
-        <h4>{visiblePlayers.length} playing</h4>
-        <TimerBar progress={timerProgress} height={10} />
-        <p class="seconds">
-          {Math.ceil((q.durationMs * (timerProgress / 100)) / 1000)}s remaining
-        </p>
-      </div>
+      <div class="reveal-layout">
+        <div class="reveal-main-col">
+          <div class="card">
+            <TimerBar progress={timerProgress} />
+            <h2 class="qtext" style="--qscale: {textScale(q.prompt.length, 50, 180, 0.55)}">{q.prompt}</h2>
+            <AnswerGrid options={q.options} variant="host" />
+          </div>
+        </div>
 
-      <div class="card">
-        <TimerBar progress={timerProgress} />
-        <h2 class="qtext" style="--qscale: {textScale(q.prompt.length, 50, 180, 0.55)}">{q.prompt}</h2>
-        <AnswerGrid options={q.options} variant="host" />
+        <!-- Same side column shape as the reveal screen, so the question
+             screen doesn't jump in layout/size when it advances. No live
+             "answered" counter here on purpose: the server sends no
+             per-answer event to the host, so it stays 0 until REVEAL. -->
+        <div class="side-col">
+          <div class="hud reveal-hud">
+            <h4>{visiblePlayers.length} playing</h4>
+            <TimerBar progress={timerProgress} height={10} />
+            <p class="seconds">
+              {Math.ceil((q.durationMs * (timerProgress / 100)) / 1000)}s remaining
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 

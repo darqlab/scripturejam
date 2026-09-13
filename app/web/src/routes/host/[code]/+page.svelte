@@ -291,6 +291,19 @@
     return n.toLocaleString();
   }
 
+  /**
+   * Scales a base font-size down as text length grows, so a long question
+   * or verse shrinks to fit its card instead of wrapping to enough lines to
+   * force the page to scroll. Below `shortLen` chars: full size (1). At or
+   * above `longLen` chars: `minScale`. Linear in between.
+   */
+  function textScale(len: number, shortLen: number, longLen: number, minScale = 0.6): number {
+    if (len <= shortLen) return 1;
+    if (len >= longLen) return minScale;
+    const t = (len - shortLen) / (longLen - shortLen);
+    return 1 - t * (1 - minScale);
+  }
+
   let visiblePlayers = $derived(
     $hostStore.players.filter((p) => p.status !== "disconnected")
   );
@@ -373,7 +386,7 @@
 
       <div class="card">
         <TimerBar progress={timerProgress} />
-        <h2 class="qtext">{q.prompt}</h2>
+        <h2 class="qtext" style="--qscale: {textScale(q.prompt.length, 50, 180, 0.55)}">{q.prompt}</h2>
         <AnswerGrid options={q.options} variant="host" />
       </div>
     </div>
@@ -397,7 +410,7 @@
       <div class="reveal-layout">
         <div class="reveal-main-col">
           <div class="card">
-            <h2 class="qtext">{q.prompt}</h2>
+            <h2 class="qtext" style="--qscale: {textScale(q.prompt.length, 50, 180, 0.55)}">{q.prompt}</h2>
             <AnswerGrid
               options={q.options}
               variant="host"
@@ -420,7 +433,7 @@
                 .join("; ")} · {r.translation}
             </p>
             {#if r.verseText}
-              <p class="verse">{r.verseText}</p>
+              <p class="verse" style="--vscale: {textScale(r.verseText.length, 100, 500, 0.55)}">{r.verseText}</p>
             {/if}
           </div>
         </div>
@@ -545,7 +558,10 @@
 
   .qtext {
     font-weight: 900;
-    font-size: clamp(32px, 4.4vw, 56px);
+    /* --qscale (set inline per-question, from its character length) shrinks
+       long prompts instead of letting them wrap to enough lines to push the
+       card past the viewport and force a scroll. */
+    font-size: calc(clamp(32px, 4.4vw, 56px) * var(--qscale, 1));
     line-height: 1.12;
     margin: 22px 0 34px;
     text-wrap: pretty;
@@ -796,8 +812,10 @@
   .scripture-card .verse {
     font-family: "EB Garamond", Georgia, serif;
     font-style: italic;
-    /* Sized for the ~360-400px side column, not the old full-width card. */
-    font-size: clamp(17px, 1.6vw, 22px);
+    /* --vscale (set inline, from the verse's character length) shrinks a
+       long multi-verse passage instead of letting the card grow tall
+       enough to force a scroll. */
+    font-size: calc(clamp(20px, 2vw, 30px) * var(--vscale, 1));
     line-height: 1.4;
     color: var(--ink);
     margin-top: 14px;

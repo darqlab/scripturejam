@@ -441,15 +441,17 @@
           {/if}
         </div>
       </div>
+
+      <div class="create-col">
+        {#if createError}
+          <p class="error create-error" role="alert">{createError}</p>
+        {/if}
+
+        <button type="button" onclick={createSession} disabled={!canCreate} class="create-btn">
+          {creating ? "Creating session…" : generating ? "Generating questions…" : "Create session →"}
+        </button>
+      </div>
     </div>
-
-    {#if createError}
-      <p class="error create-error" role="alert">{createError}</p>
-    {/if}
-
-    <button type="button" onclick={createSession} disabled={!canCreate} class="create-btn">
-      {creating ? "Creating session…" : generating ? "Generating questions…" : "Create session →"}
-    </button>
   </div>
 </Stage>
 
@@ -486,6 +488,13 @@
     .layout {
       grid-template-columns: 1fr;
     }
+  }
+
+  .create-col {
+    grid-column: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .left-col {

@@ -108,6 +108,27 @@ export async function sessionRoutes(app: FastifyInstance) {
     }
   });
 
+  // Live reachability probe for the LLM generation endpoint (DEC-034/ADR-0001
+  // §6b). Distinct from /healthz's config-only check: this actually reaches
+  // out to NVIDIA_BASE_URL so the host UI can tell a boot-time-present key
+  // apart from an endpoint that has since gone unreachable. Cheap, fast,
+  // defensive — never throws, never blocks on a full generation call.
+  app.get("/api/generation/status", async (_req, reply) => {
+    if (!config.NVIDIA_API_KEY) {
+      return reply.send({ available: false });
+    }
+    try {
+      const res = await fetch(`${config.NVIDIA_BASE_URL}/models`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${config.NVIDIA_API_KEY}` },
+        signal: AbortSignal.timeout(4000),
+      });
+      return reply.send({ available: res.ok });
+    } catch {
+      return reply.send({ available: false });
+    }
+  });
+
   app.post("/api/sessions", async (req, reply) => {
     const { allowed, ipHash } = await checkSessionCreationRateLimit(req);
 

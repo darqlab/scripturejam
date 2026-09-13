@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { storageSet } from "$lib/storage.js";
   import Stage from "$lib/components/Stage.svelte";
@@ -11,6 +12,14 @@
     type QuestionPack,
     type Difficulty,
   } from "@scripturejam/types";
+
+  interface PackSummary {
+    id: string;
+    title: string;
+    description: string;
+    ageBand: "youth" | "all-ages";
+    questionCount: number;
+  }
 
   let translation = $state<Translation>("WEB");
   let mode = $state<SessionMode>("individual");
@@ -27,7 +36,51 @@
   let generating = $state(false);
   let generateError = $state<string | null>(null);
 
-  let canCreate = $derived(!creating && generateBook !== "");
+  // Bundled-pack picker state (DEC-034/ADR-0001 Option 6 — secondary,
+  // offline-safe entry point; never removed even when generation works).
+  let packs = $state<PackSummary[]>([]);
+  let packsLoading = $state(true);
+  let packsError = $state<string | null>(null);
+  let selectedPackId = $state<string | null>(null);
+
+  // Which panel is the host actually using to create the session right now.
+  // Generation stays the default entry point (6a) — the pack picker only
+  // becomes the active choice when the host clicks into it, or when a
+  // generation_failed response opens it as an inline fallback (6b).
+  let entryMode = $state<"generate" | "pack">("generate");
+
+  // Live reachability probe (6b) — null while checking, then true/false.
+  // Used only to shape emphasis/copy; generation stays available either way
+  // so the host can still try it (and get the inline fallback on failure).
+  let generationAvailable = $state<boolean | null>(null);
+
+  onMount(async () => {
+    fetch("/api/packs")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
+      .then((data: PackSummary[]) => {
+        packs = data;
+        packsLoading = false;
+      })
+      .catch(() => {
+        packsError = "Couldn't load bundled packs";
+        packsLoading = false;
+      });
+
+    fetch("/api/generation/status")
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
+      .then((data: { available: boolean }) => {
+        generationAvailable = data.available;
+      })
+      .catch(() => {
+        // Probe failure is informational only — assume unknown, not broken.
+        generationAvailable = null;
+      });
+  });
+
+  let canCreate = $derived(
+    !creating &&
+      (entryMode === "generate" ? generateBook !== "" : selectedPackId !== null)
+  );
 
   const DIFFICULTY_LABELS: Record<Difficulty, string> = {
     easy: "Easy",
@@ -42,7 +95,59 @@
     invalid_request: "Check the chapter range — start must be less than or equal to end",
   };
 
-  async function createSession() {
+  function finishSession(code: string, hostToken: string, scope: SessionScope) {
+    storageSet(`sj_host_token_${code}`, hostToken);
+    storageSet(`sj_host_scope_${code}`, JSON.stringify({ scope, translation, mode }));
+    return goto(`/host/${code}`);
+  }
+
+  async function createSessionFromPack() {
+    if (selectedPackId === null) return;
+    creating = true;
+    createError = null;
+
+    try {
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
+        if (res.status === 429 || body.error === "rate_limited") {
+          createError = "Too many sessions created — please wait a few minutes and try again";
+        } else {
+          createError = body.message ?? body.error ?? "Failed to create session";
+        }
+        creating = false;
+        return;
+      }
+      const data = (await res.json()) as { code: string; hostToken: string };
+      const { code, hostToken } = data;
+
+      const scope: SessionScope = { type: "pack", packId: selectedPackId };
+      const startRes = await fetch(`/api/sessions/${code}/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hostToken, scope, translation, mode }),
+      });
+      if (!startRes.ok) {
+        const body = (await startRes.json().catch(() => ({}))) as { error?: string };
+        createError = body.error ?? "Failed to start session from pack";
+        creating = false;
+        return;
+      }
+
+      await finishSession(code, hostToken, scope);
+    } catch (err) {
+      console.error("createSessionFromPack error:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      createError = msg.includes("fetch") ? "Network error — please try again" : `Error: ${msg}`;
+      creating = false;
+    }
+  }
+
+  async function createSessionFromGenerate() {
     if (generateBook === "") return;
     creating = true;
     createError = null;
@@ -87,11 +192,20 @@
       });
       if (!genRes.ok) {
         const body = (await genRes.json().catch(() => ({}))) as { error?: string };
+        const errorCode = body.error;
         generateError =
-          (body.error && GENERATE_ERROR_MESSAGES[body.error]) ??
+          (errorCode && GENERATE_ERROR_MESSAGES[errorCode]) ??
           "Couldn't generate questions for that book — try again or pick another book";
         generating = false;
         creating = false;
+        // 6b: a live-generation failure (endpoint reachable at boot but not
+        // right now, or the model call itself failed) is not a dead end —
+        // `showPackFallback` (derived below) surfaces the bundled-pack
+        // picker inline, same screen, no reload. Pack list was already
+        // fetched on mount, so nothing more to load here.
+        if (errorCode === "generation_failed") {
+          generationAvailable = false;
+        }
         return;
       }
       const { pack, questions } = (await genRes.json()) as {
@@ -113,9 +227,7 @@
       }
 
       const realScope: SessionScope = { type: "custom", customPack: pack };
-      storageSet(`sj_host_token_${code}`, hostToken);
-      storageSet(`sj_host_scope_${code}`, JSON.stringify({ scope: realScope, translation, mode }));
-      await goto(`/host/${code}`);
+      await finishSession(code, hostToken, realScope);
     } catch (err) {
       console.error("createSession error:", err);
       const msg = err instanceof Error ? err.message : String(err);
@@ -123,6 +235,26 @@
       creating = false;
       generating = false;
     }
+  }
+
+  async function createSession() {
+    if (entryMode === "pack") {
+      await createSessionFromPack();
+    } else {
+      await createSessionFromGenerate();
+    }
+  }
+
+  // Inline fallback shown under the generate panel after a generation_failed
+  // response — reuses the same pack-picker state/UI built for 6a rather than
+  // duplicating it. Also shown proactively when the probe reports the
+  // generation endpoint unreachable, so the panel never looks like a dead end.
+  let showPackFallback = $derived(generateError === GENERATE_ERROR_MESSAGES.generation_failed);
+
+  function usePackInstead() {
+    entryMode = "pack";
+    generateError = null;
+    createError = null;
   }
 </script>
 
@@ -168,10 +300,20 @@
         </fieldset>
       </div>
 
-      <div class="card panel generate-panel">
-        <div class="panel-title">Generate from a book</div>
+      <div class="card panel generate-panel" class:is-active={entryMode === "generate"}>
+        <label class="panel-title panel-title-select">
+          <input type="radio" bind:group={entryMode} value="generate" />
+          <span>Generate from a book</span>
+          <span class="badge badge-ai">✨ Freshly generated by AI — not pre-reviewed</span>
+        </label>
 
         <div class="panel-body">
+          {#if generationAvailable === false}
+            <p class="probe-note" role="status">
+              Live generation looks unreachable right now — you can still try it, or
+              <button type="button" class="link-btn" onclick={usePackInstead}>use a bundled pack instead</button>.
+            </p>
+          {/if}
           <div class="field">
             <label for="generate-book">Bible book</label>
             <select id="generate-book" bind:value={generateBook}>
@@ -255,8 +397,52 @@
           {#if generateError}
             <p class="error" role="alert">{generateError}</p>
           {/if}
+          {#if showPackFallback}
+            <p class="fallback-note">
+              Play from a bundled pack instead —
+              <button type="button" class="link-btn" onclick={usePackInstead}>pick one below</button>.
+            </p>
+          {/if}
           {#if generating}
             <p class="generating">Generating questions…</p>
+          {/if}
+        </div>
+      </div>
+
+      <div class="card panel pack-panel" class:is-active={entryMode === "pack"}>
+        <label class="panel-title panel-title-select">
+          <input type="radio" bind:group={entryMode} value="pack" />
+          <span>Choose a bundled pack</span>
+          <span class="badge badge-reviewed">✅ Human-reviewed content</span>
+        </label>
+
+        <div class="panel-body">
+          <p class="helper">
+            Ready-made packs, reviewed ahead of time — no internet or AI endpoint needed. The
+            library is fixed for now; it isn't growing week to week.
+          </p>
+
+          {#if packsLoading}
+            <p class="helper">Loading packs…</p>
+          {:else if packsError}
+            <p class="error" role="alert">{packsError}</p>
+          {:else if packs.length === 0}
+            <p class="helper">No bundled packs are available on this server.</p>
+          {:else}
+            <div class="options pack-options">
+              {#each packs as p (p.id)}
+                <label class="radio-row pack-row">
+                  <input type="radio" bind:group={selectedPackId} value={p.id} />
+                  <div>
+                    <span class="opt-title">{p.title}</span>
+                    <span class="opt-sub">{p.description}</span>
+                    <span class="opt-sub pack-meta">
+                      {p.questionCount} questions · {p.ageBand === "youth" ? "Youth" : "All ages"}
+                    </span>
+                  </div>
+                </label>
+              {/each}
+            </div>
           {/if}
         </div>
       </div>
@@ -345,14 +531,104 @@
     margin-bottom: 12px;
     width: 100%;
   }
-  .generate-panel {
+  .generate-panel,
+  .pack-panel {
     padding: 0;
     overflow: hidden;
   }
-  .generate-panel .panel-title {
+  .generate-panel .panel-title,
+  .pack-panel .panel-title {
     padding: 14px 20px;
     margin: 0;
     border-bottom: 1px solid rgba(42, 26, 94, 0.12);
+  }
+
+  /* Generation is the primary path (larger, first); the pack picker reads
+     as the secondary alternative — smaller title, muted border, no glow —
+     never a peer tab (DEC-034 6a). */
+  .pack-panel {
+    opacity: 0.92;
+  }
+  .pack-panel .panel-title {
+    font-size: 15px;
+  }
+  .pack-panel.is-active {
+    opacity: 1;
+    box-shadow: 0 0 0 2px var(--grad-a);
+  }
+  .generate-panel.is-active {
+    box-shadow: 0 0 0 2px var(--grad-a);
+  }
+
+  .panel-title-select {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    flex-wrap: wrap;
+  }
+  .panel-title-select input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    accent-color: var(--grad-a);
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: normal;
+    border-radius: 999px;
+    padding: 3px 10px;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .badge-ai {
+    background: rgba(123, 47, 247, 0.12);
+    color: var(--grad-a);
+  }
+  .badge-reviewed {
+    background: rgba(16, 150, 90, 0.12);
+    color: #0f7a4f;
+  }
+
+  .link-btn {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    font-weight: 700;
+    color: var(--grad-a);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .probe-note {
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: rgba(123, 47, 247, 0.08);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 0;
+  }
+
+  .fallback-note {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .pack-options {
+    gap: 14px;
+  }
+  .pack-row {
+    align-items: flex-start;
+  }
+  .pack-meta {
+    color: var(--grad-a) !important;
+    font-weight: 600;
   }
   .panel-body {
     padding: 18px 20px;

@@ -9,7 +9,8 @@
     size = 112,
     codeSize = 42,
     hero = false,
-  }: { code: string; size?: number; codeSize?: number; hero?: boolean } = $props();
+    joinHost = "",
+  }: { code: string; size?: number; codeSize?: number; hero?: boolean; joinHost?: string } = $props();
 </script>
 
 <div class="join" class:hero>
@@ -17,7 +18,9 @@
     <img src="/api/sessions/{code}/qr.svg" alt="QR code to join session {code}" />
   </div>
   <div class="text-center">
-    <p class="cap">Join at quiz.local</p>
+    {#if joinHost}
+      <p class="cap">Join at {joinHost}</p>
+    {/if}
     <p class="code" style="font-size: {codeSize}px">{code}</p>
   </div>
 </div>

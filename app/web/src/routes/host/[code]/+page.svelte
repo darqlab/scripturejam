@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, untrack } from "svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { hostStore } from "$lib/stores/host.js";
@@ -37,6 +37,7 @@
   let advanceError = $state<string | null>(null);
   let copyDone = $state(false);
   let isCustomPack = $state(false);
+  let joinHost = $state("");
 
   function startTimer(startedAt: number, durationMs: number) {
     if (timerRaf !== null) cancelAnimationFrame(timerRaf);
@@ -68,6 +69,15 @@
     }
 
     hostStore.setCredentials(code, hostToken);
+
+    // Session-scoped: fetched once, never per-render, per DEC-034-adjacent
+    // guidance against a "growing" fetch pattern here.
+    fetch("/api/config/join-host")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { joinHost?: string } | null) => {
+        if (data?.joinHost) joinHost = data.joinHost;
+      })
+      .catch(() => { /* keep the empty fallback; caption just hides itself */ });
 
     const scopeRaw = storageGet(`sj_host_scope_${code}`);
     if (scopeRaw) {
@@ -400,7 +410,9 @@
       cancelChoreography();
       return;
     }
-    void runChoreography(r, q.options);
+    untrack(() => {
+      void runChoreography(r, q.options);
+    });
     return cancelChoreography;
   });
 
@@ -434,8 +446,10 @@
     <div class="main">
       <div class="lobby-split">
         <div class="qr-col">
-          <JoinCard {code} hero size={440} codeSize={90} />
-          <p class="scan-label">or type the code at quiz.local/join</p>
+          <JoinCard {code} {joinHost} hero size={440} codeSize={90} />
+          {#if joinHost}
+            <p class="scan-label">or type the code at {joinHost}/join</p>
+          {/if}
         </div>
 
         <div class="players-col">

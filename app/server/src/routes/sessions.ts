@@ -129,6 +129,15 @@ export async function sessionRoutes(app: FastifyInstance) {
     }
   });
 
+  // Single source of truth for the human-readable join host shown under the
+  // QR code — derived the same way svg.ts derives the QR's own joinUrl, so
+  // the caption and the QR image never disagree.
+  app.get("/api/config/join-host", async (_req, reply) => {
+    const baseUrl = config.PUBLIC_URL ?? `http://localhost:${config.PORT}`;
+    const joinHost = new URL(baseUrl).host;
+    return reply.send({ joinHost });
+  });
+
   app.post("/api/sessions", async (req, reply) => {
     const { allowed, ipHash } = await checkSessionCreationRateLimit(req);
 

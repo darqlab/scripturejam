@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**scripturejam** — a Kahoot-style live multi-player Bible quiz app. Host runs a session on a big screen; players join from mobile browsers via QR or short code. Scripture reference shown on every answer reveal — the teaching moment is the point. Self-hostable, no native app required.
+**scripturejam** — a live multi-player Bible quiz app. Host runs a session on a big screen; players join from mobile browsers via QR or short code. Scripture reference shown on every answer reveal — the teaching moment is the point. Self-hostable, no native app required.
 
 - **Audience:** youth groups, small groups, whole-congregation events
 - **Scale target:** up to 200 concurrent players per session

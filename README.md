@@ -1,6 +1,6 @@
 # scripturejam
 
-scripturejam is a self-hosted Kahoot-style Bible quiz app for live church events. Host runs a session on a big screen; players join from their mobile browsers with a QR scan or short code. Scripture reference shown on every answer reveal — the teaching moment is the point.
+scripturejam is a self-hosted Bible quiz app for live church events. Host runs a session on a big screen; players join from their mobile browsers with a QR scan or short code. Scripture reference shown on every answer reveal — the teaching moment is the point.
 
 ---
 
